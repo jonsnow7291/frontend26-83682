@@ -29,15 +29,87 @@ export const NavigationItems: NavigationItem[] = [
         icon: 'feather icon-user',
         classes: 'nav-item'
       },
-      /* ---------- Nuevos menus aqui -------------  */
       {
-        id: 'mascotas',
+        id: 'cliente',
+        title: 'Gestión de Clientes',
+        type: 'item',
+        url: '/inicio/clientes',
+        icon: 'feather icon-users',
+        classes: 'nav-item'
+      },
+      {
+        id: 'mascota',
         title: 'Gestión de Mascotas',
         type: 'item',
         url: '/inicio/mascotas',
         icon: 'feather icon-home',
         classes: 'nav-item'
-      }, 
+      },
+      {
+        id: 'raza',
+        title: 'Gestión de Razas',
+        type: 'item',
+        url: '/inicio/razas',
+        icon: 'feather icon-heart',
+        classes: 'nav-item'
+      },
+      {
+        id: 'medico',
+        title: 'Gestión de Médicos',
+        type: 'item',
+        url: '/inicio/medicos',
+        icon: 'feather icon-user-check',
+        classes: 'nav-item'
+      },
+      {
+        id: 'especializacion',
+        title: 'Gestión de Especializaciones',
+        type: 'item',
+        url: '/inicio/especializaciones',
+        icon: 'feather icon-award',
+        classes: 'nav-item'
+      },
+      {
+        id: 'cita',
+        title: 'Gestión de Citas',
+        type: 'item',
+        url: '/inicio/citas',
+        icon: 'feather icon-calendar',
+        classes: 'nav-item'
+      },
+      {
+        id: 'historia-medica',
+        title: 'Gestión de Historias Médicas',
+        type: 'item',
+        url: '/inicio/historias-medicas',
+        icon: 'feather icon-clipboard',
+        classes: 'nav-item'
+      },
+      {
+        id: 'anotacion-historia',
+        title: 'Gestión de Anotaciones',
+        type: 'item',
+        url: '/inicio/anotaciones',
+        icon: 'feather icon-edit',
+        classes: 'nav-item'
+      },
+      {
+        id: 'medicamento',
+        title: 'Gestión de Medicamentos',
+        type: 'item',
+        url: '/inicio/medicamentos',
+        icon: 'feather icon-package',
+        classes: 'nav-item'
+      },
+      {
+        id: 'formula-medica',
+        title: 'Gestión de Fórmulas Médicas',
+        type: 'item',
+        url: '/inicio/formulas-medicas',
+        icon: 'feather icon-file-text',
+        classes: 'nav-item'
+      }
+      /* ---------- Nuevos menus aqui -------------  */
     ]
-  },  
+  },
 ];

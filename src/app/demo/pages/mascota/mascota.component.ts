@@ -2,7 +2,12 @@ import { Component } from '@angular/core';
 import { CommonModule, formatDate } from '@angular/common';
 
 import { MascotaService } from './service/mascota.service';
+import { RazaService } from '../raza/service/raza.service';
+import { ClienteService } from '../cliente/service/cliente.service';
 import { Mascota } from 'src/app/models/mascota';
+import { MascotaRq } from 'src/app/models/mascota-rq';
+import { Raza } from 'src/app/models/raza';
+import { Cliente } from 'src/app/models/cliente';
 import { FormBuilder, FormGroup, Validators, AbstractControl, FormsModule, ReactiveFormsModule } from '@angular/forms';
 
 import Swal from 'sweetalert2';
@@ -31,9 +36,16 @@ export class MascotaComponent {
   form!: FormGroup;
   mascotaSelected: Mascota | null = null;
 
+  // Catalogos para los selects del formulario.
+  listRazas: Raza[] = [];
+  listClientes: Cliente[] = [];
+
   constructor(private readonly mascotaService: MascotaService,
+    private readonly razaService: RazaService,
+    private readonly clienteService: ClienteService,
     private readonly formBuilder: FormBuilder) {
     this.listar();
+    this.cargarCatalogos();
     this.inicializarFormulario();
   }
 
@@ -41,9 +53,21 @@ export class MascotaComponent {
   inicializarFormulario() {
     this.form = this.formBuilder.group({
       nombreMascota: ['', Validators.required],
-      raza: ['', Validators.required],
-      edad: ['', Validators.required],
-      cliente: ['', Validators.required]
+      razaId: [null, Validators.required],
+      edad: [null, [Validators.required, Validators.min(1)]],
+      clienteId: [null, Validators.required]
+    });
+  }
+
+  // Carga las razas y clientes que alimentan los selects del formulario.
+  cargarCatalogos() {
+    this.razaService.listarRazas().subscribe({
+      next: (data) => this.listRazas = data,
+      error: (error) => console.error('Error al obtener las razas:', error)
+    });
+    this.clienteService.listarClientes().subscribe({
+      next: (data) => this.listClientes = data,
+      error: (error) => console.error('Error al obtener los clientes:', error)
     });
   }
 
@@ -153,9 +177,9 @@ export class MascotaComponent {
     this.modoFormulario = 'E';
     this.form.patchValue({
       nombreMascota: mascota.nombreMascota,
-      raza: mascota.raza,
+      razaId: mascota.raza?.razaId ?? null,
       edad: mascota.edad,
-      cliente: mascota.cliente
+      clienteId: mascota.cliente?.clienteId ?? null
     });
     this.openModal(this.modoFormulario);
   }
@@ -179,5 +203,42 @@ export class MascotaComponent {
     }
   }
 
+  /**
+   * Guarda o actualiza la mascota segun el modo del formulario (C = crear, E = editar).
+   */
+  guardar() {
+    if (this.form.invalid) {
+      this.form.markAllAsTouched();
+      return;
+    }
 
+    const rq: MascotaRq = {
+      nombreMascota: this.form.value.nombreMascota,
+      edad: Number(this.form.value.edad),
+      razaId: Number(this.form.value.razaId),
+      clienteId: Number(this.form.value.clienteId)
+    };
+
+    const esEdicion = this.modoFormulario === 'E' && this.mascotaSelected !== null;
+    if (esEdicion) {
+      rq.mascotaId = this.mascotaSelected!.mascotaId;
+    }
+
+    const peticion = esEdicion
+      ? this.mascotaService.actualizarMascota(rq)
+      : this.mascotaService.guardarMascota(rq);
+
+    peticion.subscribe({
+      next: (respuesta) => {
+        Swal.fire('Exito', respuesta.message ?? 'Operacion exitosa', 'success');
+        this.closeModal();
+        this.listar();
+      },
+      error: (error) => {
+        // El backend devuelve {status, error, message} en los errores controlados.
+        const mensaje = error?.error?.message ?? 'No fue posible completar la operacion';
+        Swal.fire('Error', mensaje, 'error');
+      }
+    });
+  }
 }

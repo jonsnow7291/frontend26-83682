@@ -44,10 +44,10 @@
                         <tbody *ngIf="mascotasFiltradas.length > 0">
                             <tr *ngFor="let mascota of mascotasPaginadas">
                                 <td class="text-center">{{ mascota.nombreMascota }}</td>
-                                <td class="text-center">{{ mascota.raza.especie }}</td>
-                                <td class="text-center">{{ mascota.raza.nombre }}</td>
+                                <td class="text-center">{{ mascota.raza?.especie }}</td>
+                                <td class="text-center">{{ mascota.raza?.nombre }}</td>
                                 <td class="text-center">{{ mascota.edad }}</td>
-                                <td class="text-center">{{ mascota.cliente.nombres }} {{ mascota.cliente.apellidos }}
+                                <td class="text-center">{{ mascota.cliente?.nombres }} {{ mascota.cliente?.apellidos }}
                                 </td>
                                 <td class="text-center">{{ mascota.fechaRegistro | date:'yyyy-MM-dd HH:mm' }}</td>
                                 <td class="text-center">
@@ -94,14 +94,52 @@
             <div class="modal-body">
                 <div class="card">
                     <div class="card-body">
-                      
+                        <form [formGroup]="form" (ngSubmit)="guardar()">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label for="nombreMascota" class="form-label">Nombre</label>
+                                    <input id="nombreMascota" type="text" class="form-control"
+                                        formControlName="nombreMascota"
+                                        [class.is-invalid]="f['nombreMascota'].touched && f['nombreMascota'].invalid" />
+                                    <div class="invalid-feedback">El nombre es obligatorio.</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="edad" class="form-label">Edad</label>
+                                    <input id="edad" type="number" min="1" class="form-control" formControlName="edad"
+                                        [class.is-invalid]="f['edad'].touched && f['edad'].invalid" />
+                                    <div class="invalid-feedback">La edad es obligatoria y debe ser mayor a 0.</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="razaId" class="form-label">Raza</label>
+                                    <select id="razaId" class="form-select" formControlName="razaId"
+                                        [class.is-invalid]="f['razaId'].touched && f['razaId'].invalid">
+                                        <option [ngValue]="null" disabled>Seleccione una raza</option>
+                                        <option *ngFor="let raza of listRazas" [ngValue]="raza.razaId">
+                                            {{ raza.nombre }} ({{ raza.especie }})
+                                        </option>
+                                    </select>
+                                    <div class="invalid-feedback">Seleccione una raza.</div>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label for="clienteId" class="form-label">Cliente</label>
+                                    <select id="clienteId" class="form-select" formControlName="clienteId"
+                                        [class.is-invalid]="f['clienteId'].touched && f['clienteId'].invalid">
+                                        <option [ngValue]="null" disabled>Seleccione un cliente</option>
+                                        <option *ngFor="let cliente of listClientes" [ngValue]="cliente.clienteId">
+                                            {{ cliente.nombres }} {{ cliente.apellidos }}
+                                        </option>
+                                    </select>
+                                    <div class="invalid-feedback">Seleccione un cliente.</div>
+                                </div>
+                            </div>
+                        </form>
                     </div>
                 </div>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal"
                 (click)="closeModal()">Cerrar</button>
-                <button type="button" class="btn btn-primary">{{ titleBoton}}</button>
+                <button type="button" class="btn btn-primary" (click)="guardar()">{{ titleBoton}}</button>
             </div>
         </div>
     </div>
