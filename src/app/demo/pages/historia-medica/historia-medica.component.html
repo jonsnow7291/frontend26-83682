@@ -1,15 +1,154 @@
-<app-tabla-listado [titulo]="titulo" [columnas]="columnas" [items]="items">
-    <div filtros class="row g-2 justify-content-md-end">
-        <div class="col-auto">
-            <label class="form-label mb-0">Desde</label>
-            <input type="date" class="form-control" [(ngModel)]="fechaInicial" name="fechaInicial" />
+<div class="container-fluid">
+    <div class="card mb-3">
+        <div class="card-header">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-3">
+                    <label class="form-label mb-0">Desde</label>
+                    <input type="date" class="form-control" [(ngModel)]="fechaInicial" name="fechaInicial" />
+                </div>
+                <div class="col-md-3">
+                    <label class="form-label mb-0">Hasta</label>
+                    <input type="date" class="form-control" [(ngModel)]="fechaFinal" name="fechaFinal" />
+                </div>
+                <div class="col-md-auto">
+                    <button class="btn btn-outline-primary" type="button" (click)="listar()">Filtrar</button>
+                </div>
+                <div class="col-md-auto ms-auto">
+                    <button class="btn btn-primary" type="button" (click)="nuevaHistoria()">
+                        <i class="fa fa-plus" aria-hidden="true"></i>&nbsp; Nueva historia
+                    </button>
+                </div>
+            </div>
         </div>
-        <div class="col-auto">
-            <label class="form-label mb-0">Hasta</label>
-            <input type="date" class="form-control" [(ngModel)]="fechaFinal" name="fechaFinal" />
-        </div>
-        <div class="col-auto align-self-end">
-            <button class="btn btn-outline-primary" type="button" (click)="listar()">Filtrar</button>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th class="text-center">Historia</th>
+                            <th class="text-center">Mascota</th>
+                            <th class="text-center">Cliente</th>
+                            <th class="text-center">Fecha de creación</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody *ngIf="items.length === 0">
+                        <tr>
+                            <td colspan="5" class="text-center">No hay historias registradas</td>
+                        </tr>
+                    </tbody>
+                    <tbody *ngIf="items.length > 0">
+                        <tr *ngFor="let historia of items">
+                            <td class="text-center">{{ historia.id }}</td>
+                            <td class="text-center">{{ historia.mascota?.nombreMascota }}</td>
+                            <td class="text-center">{{ historia.mascota?.cliente?.nombres }} {{ historia.mascota?.cliente?.apellidos }}</td>
+                            <td class="text-center">{{ historia.fechaCreacion | date:'yyyy-MM-dd HH:mm' }}</td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-outline-info me-1" (click)="verHistorial(historia)">
+                                    Ver historial
+                                </button>
+                                <button class="btn btn-sm btn-outline-primary me-1" (click)="abrirEdicion(historia)">
+                                    Editar
+                                </button>
+                                <button class="btn btn-sm btn-outline-danger" (click)="eliminar(historia)">
+                                    Eliminar
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
-</app-tabla-listado>
+</div>
+
+<!-- Modal formulario -->
+<div class="modal fade" id="modalHistoria" tabindex="-1" aria-labelledby="modalHistoriaLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="modalHistoriaLabel">{{ titleModal }}</h1>
+                <button type="button" class="btn-close" aria-label="Close" (click)="cerrarModal()"></button>
+            </div>
+            <div class="modal-body">
+                <form [formGroup]="form" (ngSubmit)="guardar()">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="clienteId" class="form-label">Cliente</label>
+                            <select id="clienteId" class="form-select" formControlName="clienteId"
+                                (change)="onClienteChange($any($event.target).value ? +$any($event.target).value : null)"
+                                [class.is-invalid]="f['clienteId'].touched && f['clienteId'].invalid">
+                                <option [ngValue]="null" disabled>Seleccione un cliente</option>
+                                <option *ngFor="let cliente of clientes" [ngValue]="cliente.clienteId">
+                                    {{ cliente.nombres }} {{ cliente.apellidos }}
+                                </option>
+                            </select>
+                            <div class="invalid-feedback">Seleccione un cliente.</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="mascotaId" class="form-label">Mascota</label>
+                            <select id="mascotaId" class="form-select" formControlName="mascotaId"
+                                [class.is-invalid]="f['mascotaId'].touched && f['mascotaId'].invalid">
+                                <option [ngValue]="null" disabled>Seleccione una mascota</option>
+                                <option *ngFor="let mascota of mascotas" [ngValue]="mascota.mascotaId">
+                                    {{ mascota.nombreMascota }}
+                                </option>
+                            </select>
+                            <div class="invalid-feedback">Seleccione una mascota.</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="citaId" class="form-label">Cita atendida (opcional)</label>
+                            <input id="citaId" type="number" class="form-control" formControlName="citaId" />
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cerrar</button>
+                <button type="button" class="btn btn-primary" (click)="guardar()">{{ titleBoton }}</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal historial -->
+<div class="modal fade" id="modalHistorial" tabindex="-1" aria-labelledby="modalHistorialLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="modalHistorialLabel">
+                    Historial clínico - {{ historiaVer?.mascota?.nombreMascota }}
+                </h1>
+                <button type="button" class="btn-close" aria-label="Close" (click)="cerrarHistorial()"></button>
+            </div>
+            <div class="modal-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th class="text-center">Fecha</th>
+                                <th class="text-center">Médico</th>
+                                <th class="text-center">Descripción</th>
+                            </tr>
+                        </thead>
+                        <tbody *ngIf="anotacionesHistorial.length === 0">
+                            <tr>
+                                <td colspan="3" class="text-center">No hay anotaciones registradas</td>
+                            </tr>
+                        </tbody>
+                        <tbody *ngIf="anotacionesHistorial.length > 0">
+                            <tr *ngFor="let anotacion of anotacionesHistorial">
+                                <td class="text-center">{{ anotacion.fecha | date:'yyyy-MM-dd HH:mm' }}</td>
+                                <td class="text-center">{{ anotacion.medico?.nombres }} {{ anotacion.medico?.apellidos }}</td>
+                                <td>{{ anotacion.descripcion }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="cerrarHistorial()">Cerrar</button>
+            </div>
+        </div>
+    </div>
+</div>

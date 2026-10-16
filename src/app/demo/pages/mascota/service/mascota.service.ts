@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Mascota } from 'src/app/models/mascota';
 import { MascotaRq } from 'src/app/models/mascota-rq';
@@ -18,6 +19,11 @@ export class MascotaService {
 
   listarMascotas(): Observable<Mascota[]> {
     return this.backendService.get(environment.apiUrlAuth, this.api, "listar-mascotas");
+  }
+
+  buscarPorCliente(clienteId: number): Observable<Mascota[]> {
+    const params = new HttpParams().set('clienteId', clienteId);
+    return this.backendService.get(environment.apiUrlAuth, this.api, "buscar-by-cliente", params);
   }
 
   guardarMascota(mascota: MascotaRq): Observable<Respuesta> {
