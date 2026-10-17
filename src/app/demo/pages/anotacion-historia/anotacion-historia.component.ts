@@ -25,11 +25,29 @@ import { TablaDatos, tiempo, nombreCompleto, mensajeError } from 'src/app/utils/
   templateUrl: './anotacion-historia.component.html'
 })
 export class AnotacionHistoriaComponent {
+  /**
+   * Instancia del modal del formulario.
+   */
   modalFormulario: Modal | null = null;
+  /**
+   * Título del modal.
+   */
   titleModal = '';
+  /**
+   * Modo del formulario (C = crear, E = editar).
+   */
   modoFormulario = '';
+  /**
+   * Texto del botón de guardar.
+   */
   titleBoton = '';
+  /**
+   * Formulario reactivo de la anotación.
+   */
   form!: FormGroup;
+  /**
+   * Anotación en edición (`null` al crear).
+   */
   anotacionSeleccionada: AnotacionHistoria | null = null;
 
   /** Indica que se está cargando el listado. */
@@ -47,8 +65,17 @@ export class AnotacionHistoriaComponent {
     'fecha'
   );
 
+  /**
+   * Catálogo de historias clínicas.
+   */
   historias: HistoriaMedica[] = [];
+  /**
+   * Catálogo de veterinarios.
+   */
   medicos: Medico[] = [];
+  /**
+   * Historia clínica cuyas anotaciones se muestran.
+   */
   historiaId: number | null = null;
 
   constructor(

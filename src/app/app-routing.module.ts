@@ -14,6 +14,9 @@ import { MedicamentoComponent } from './demo/pages/medicamento/medicamento.compo
 import { FormulaMedicaComponent } from './demo/pages/formula-medica/formula-medica.component';
 
 
+/**
+ * Rutas de la aplicación: cada módulo de gestión cuelga de `/inicio`.
+ */
 export const routes: Routes = [
   {
     path: '',
@@ -42,6 +45,9 @@ export const routes: Routes = [
   { path: '**', redirectTo: 'inicio' }
 ];
 
+/**
+ * Módulo de enrutamiento de la aplicación.
+ */
 @NgModule({
   imports: [RouterModule.forRoot(routes)],
   exports: [RouterModule]

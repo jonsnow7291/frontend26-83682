@@ -13,6 +13,9 @@ import { FormBuilder, FormGroup, Validators, AbstractControl, FormsModule, React
 import Swal from 'sweetalert2';
 import { Modal } from 'bootstrap';
 
+/**
+ * Componente de gestión de mascotas: listado con búsqueda y paginación, creación y edición.
+ */
 @Component({
   selector: 'app-mascota',
   imports: [CommonModule, FormsModule, ReactiveFormsModule],
@@ -20,24 +23,56 @@ import { Modal } from 'bootstrap';
   styleUrl: './mascota.component.scss'
 })
 export class MascotaComponent {
-  // Variables para el modal.
+  /**
+   * Instancia del modal del formulario.
+   */
   modalInstance: Modal | null = null;
+  /**
+   * Título del modal.
+   */
   titleModal: string = "";
+  /**
+   * Modo del formulario (C = crear, E = editar).
+   */
   modoFormulario: string = "";
+  /**
+   * Texto del botón de guardar.
+   */
   titleBoton: string = "";
 
-  // Variables para la paginación y búsqueda en la datatable.
+  /**
+   * Mascotas recibidas del backend.
+   */
   listMascotas: Mascota[] = [];
+  /**
+   * Texto de búsqueda actual.
+   */
   terminoBusqueda = '';
+  /**
+   * Página visible.
+   */
   paginaActual = 1;
+  /**
+   * Registros por página.
+   */
   readonly registrosPorPagina = 10;
 
-  // Formulario para crear o editar mascota.
+  /**
+   * Formulario reactivo de la mascota.
+   */
   form!: FormGroup;
+  /**
+   * Mascota en edición (`null` al crear).
+   */
   mascotaSelected: Mascota | null = null;
 
-  // Catalogos para los selects del formulario.
+  /**
+   * Catálogo de razas.
+   */
   listRazas: Raza[] = [];
+  /**
+   * Catálogo de clientes.
+   */
   listClientes: Cliente[] = [];
 
   constructor(private readonly mascotaService: MascotaService,
@@ -49,7 +84,9 @@ export class MascotaComponent {
     this.inicializarFormulario();
   }
 
-  // Metodo ue permite inicializar el formulario con sus controles y validaciones.
+  /**
+   * Inicializa el formulario con sus controles y validaciones.
+   */
   inicializarFormulario() {
     this.form = this.formBuilder.group({
       nombreMascota: ['', Validators.required],
@@ -59,7 +96,9 @@ export class MascotaComponent {
     });
   }
 
-  // Carga las razas y clientes que alimentan los selects del formulario.
+  /**
+   * Carga las razas y clientes que alimentan los selects del formulario.
+   */
   cargarCatalogos() {
     this.razaService.listarRazas().subscribe({
       next: (data) => this.listRazas = data,
@@ -71,7 +110,9 @@ export class MascotaComponent {
     });
   }
 
-  // Obtiene los controles del formulario para facilitar el acceso a sus propiedades y métodos.
+  /**
+   * Controles del formulario (simplifica las validaciones en la vista).
+   */
   get f(): { [key: string]: AbstractControl } {
     return this.form.controls;
   }
@@ -104,15 +145,24 @@ export class MascotaComponent {
     });
   }
 
+  /**
+   * Mascotas de la página actual.
+   */
   get mascotasPaginadas(): Mascota[] {
     const inicio = (this.paginaActual - 1) * this.registrosPorPagina;
     return this.mascotasFiltradas.slice(inicio, inicio + this.registrosPorPagina);
   }
 
+  /**
+   * Número total de páginas.
+   */
   get totalPaginas(): number {
     return Math.ceil(this.mascotasFiltradas.length / this.registrosPorPagina);
   }
 
+  /**
+   * Números de página para el paginador.
+   */
   get paginas(): number[] {
     return Array.from({ length: this.totalPaginas }, (_, indice) => indice + 1);
   }
@@ -136,20 +186,29 @@ export class MascotaComponent {
       );
   }
 
-  // Metodo que actualiza el termino de busqueda y reinicia la pagina actual a 1.
+  /**
+   * Actualiza el término de búsqueda y vuelve a la primera página.
+   * @param event evento del campo de búsqueda.
+   */
   actualizarBusqueda(event: Event) {
     this.terminoBusqueda = (event.target as HTMLInputElement).value;
     this.paginaActual = 1;
   }
 
-  // Cambia paginacion.
+  /**
+   * Cambia a la página indicada si está en rango.
+   * @param pagina número de página.
+   */
   cambiarPagina(pagina: number) {
     if (pagina >= 1 && pagina <= this.totalPaginas) {
       this.paginaActual = pagina;
     }
   }
 
-  // Metodo privado para normalizar el texto, eliminando acentos y convirtiendo a minúsculas.
+  /**
+   * Normaliza un texto: minúsculas y sin tildes.
+   * @param texto texto a normalizar.
+   */
   private normalizarTexto(texto: string): string {
     return texto
       .toLocaleLowerCase()
@@ -157,7 +216,10 @@ export class MascotaComponent {
       .replace(/[\u0300-\u036f]/g, '');
   }
 
-  // Evento para abrir el modal de crear o editar mascota, dependiendo del modo recibido.
+  /**
+   * Abre el modal para crear una mascota.
+   * @param modo modo del formulario (C = crear).
+   */
   nuevaMascota(modo: string) {
     this.titleModal = modo === 'C' ? 'Crear Mascota' : 'Editar Mascota';
     this.modoFormulario = modo;
@@ -166,12 +228,19 @@ export class MascotaComponent {
     this.openModal(modo);
   }
 
+  /**
+   * Reinicia el formulario a su estado inicial.
+   */
   resetFormulario() {
     this.form.reset();
     this.form.markAsPristine();
     this.form.markAsUntouched();
   }
 
+  /**
+   * Abre el modal para editar la mascota indicada.
+   * @param mascota mascota a editar.
+   */
   abrirEdicion(mascota: Mascota) {
     this.mascotaSelected = mascota;
     this.modoFormulario = 'E';
@@ -184,6 +253,9 @@ export class MascotaComponent {
     this.openModal(this.modoFormulario);
   }
 
+  /**
+   * Cierra el modal y reinicia el formulario.
+   */
   closeModal() {
     if (this.modalInstance) {
       this.modalInstance.hide();
@@ -191,6 +263,10 @@ export class MascotaComponent {
     this.resetFormulario();
   }
 
+  /**
+   * Abre el modal del formulario.
+   * @param modo modo del formulario (C = crear, E = editar).
+   */
   openModal(modo: string) {
     this.titleModal = modo === 'C' ? 'Crear Mascota' : 'Editar Mascota';
     this.titleBoton = modo === 'C' ? 'Guardar Mascota' : 'Actualizar Mascota';

@@ -1,16 +1,28 @@
 import { Component } from '@angular/core';
 import { Cliente } from 'src/app/models/cliente';
 import { ClienteService } from './service/cliente.service';
-import { TablaListadoComponent, Columna, fechaHora, soloFecha } from 'src/app/demo/shared/tabla-listado/tabla-listado.component';
+import { TablaListadoComponent, Columna, soloFecha } from 'src/app/demo/shared/tabla-listado/tabla-listado.component';
 
+/**
+ * Listado de clientes con búsqueda y paginación (usa `app-tabla-listado`).
+ */
 @Component({
   selector: 'app-cliente',
   imports: [TablaListadoComponent],
   templateUrl: './cliente.component.html'
 })
 export class ClienteComponent {
+  /**
+   * Título mostrado en la tabla.
+   */
   titulo = 'Clientes';
+  /**
+   * Registros de clientes recibidos del backend.
+   */
   items: Cliente[] = [];
+  /**
+   * Columnas de la tabla y cómo se obtiene el valor de cada una.
+   */
   columnas: Columna[] = [
     { titulo: 'Documento', valor: (c: Cliente) => `${c.tipoDocumento ?? ''} ${c.numeroDocumento ?? ''}` },
     { titulo: 'Nombres', valor: (c: Cliente) => c.nombres },
@@ -26,6 +38,9 @@ export class ClienteComponent {
     this.listar();
   }
 
+  /**
+   * Consulta los clientes en el backend.
+   */
   listar() {
     this.servicio.listarClientes().subscribe({
       next: (data) => this.items = data,

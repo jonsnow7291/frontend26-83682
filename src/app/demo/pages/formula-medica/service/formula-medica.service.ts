@@ -14,6 +14,9 @@ import { environment } from 'src/environments/environment';
   providedIn: 'root'
 })
 export class FormulaMedicaService {
+  /**
+   * Ruta base del recurso en el backend.
+   */
   private api = `formula-medica`;
 
   constructor(private backendService: BackendService) { }

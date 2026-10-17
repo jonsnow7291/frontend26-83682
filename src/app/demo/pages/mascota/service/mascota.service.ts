@@ -14,6 +14,9 @@ import { environment } from 'src/environments/environment';
   providedIn: 'root'
 })
 export class MascotaService {
+  /**
+   * Ruta base del recurso en el backend.
+   */
   private api = `mascota`;
 
   constructor(private backendService: BackendService) { }

@@ -5,6 +5,10 @@ import { provideRouter, withEnabledBlockingInitialNavigation, withHashLocation, 
 import { routes } from './app-routing.module';
 import { HeadersInterceptor } from "./interceptors/headers.interceptor";
 
+/**
+ * Configuración de la aplicación: enrutamiento con hash, cliente HTTP, animaciones
+ * e interceptor de encabezados.
+ */
 export const appConfig: ApplicationConfig = {
     providers: [
       provideRouter(routes,

@@ -14,6 +14,9 @@ import { environment } from 'src/environments/environment';
   providedIn: 'root'
 })
 export class HistoriaMedicaService {
+  /**
+   * Ruta base del recurso en el backend.
+   */
   private api = `historia-medica`;
 
   constructor(private backendService: BackendService) { }

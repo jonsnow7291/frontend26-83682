@@ -14,6 +14,9 @@ import { environment } from 'src/environments/environment';
   providedIn: 'root'
 })
 export class AnotacionHistoriaService {
+  /**
+   * Ruta base del recurso en el backend.
+   */
   private api = `anotacion-historia`;
 
   constructor(private backendService: BackendService) { }

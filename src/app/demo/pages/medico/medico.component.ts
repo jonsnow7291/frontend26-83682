@@ -3,8 +3,11 @@ import { Medico } from 'src/app/models/medico';
 import { Especializacion } from 'src/app/models/especializacion';
 import { MedicoService } from './service/medico.service';
 import { EspecializacionService } from '../especializacion/service/especializacion.service';
-import { TablaListadoComponent, Columna, fechaHora, soloFecha } from 'src/app/demo/shared/tabla-listado/tabla-listado.component';
+import { TablaListadoComponent, Columna } from 'src/app/demo/shared/tabla-listado/tabla-listado.component';
 
+/**
+ * Listado de veterinarios con búsqueda y paginación (usa `app-tabla-listado`).
+ */
 @Component({
   selector: 'app-medico',
   imports: [TablaListadoComponent],
@@ -12,9 +15,21 @@ import { TablaListadoComponent, Columna, fechaHora, soloFecha } from 'src/app/de
   styleUrl: './medico.component.scss'
 })
 export class MedicoComponent {
+  /**
+   * Título mostrado en la tabla.
+   */
   titulo = 'Médicos';
+  /**
+   * Registros de veterinarios recibidos del backend.
+   */
   items: Medico[] = [];
+  /**
+   * Catálogo de especializaciones, para mostrar su nombre.
+   */
   especializaciones: Especializacion[] = [];
+  /**
+   * Columnas de la tabla y cómo se obtiene el valor de cada una.
+   */
   columnas: Columna[] = [
     { titulo: 'Documento', valor: (m: Medico) => `${m.tipoDocumento ?? ''} ${m.numeroDocumento ?? ''}` },
     { titulo: 'Nombres', valor: (m: Medico) => m.nombres },
@@ -36,7 +51,10 @@ export class MedicoComponent {
     });
   }
 
-  // Busca el nombre de la especializacion a partir de su id (el back solo envia el id).
+  /**
+   * Busca el nombre de la especialización a partir de su id (el backend solo envía el id).
+   * @param id identificador de la especialización.
+   */
   private nombreEspecializacion(id?: number): string {
     return this.especializaciones.find((e) => e.id === id)?.nombre ?? '';
   }

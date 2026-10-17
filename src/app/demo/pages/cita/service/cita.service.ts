@@ -10,12 +10,33 @@ import { environment } from 'src/environments/environment';
  * Solicitud de creación o actualización de cita médica para el backend.
  */
 export interface CitaRq {
+  /**
+   * Identificador de la cita (solo al actualizar).
+   */
   citaId?: number;
+  /**
+   * Cliente que solicita la cita.
+   */
   clienteId: number;
+  /**
+   * Mascota del cliente.
+   */
   mascotaId: number;
+  /**
+   * Veterinario asignado.
+   */
   medicoId: number;
+  /**
+   * Fecha y hora en formato ISO (yyyy-MM-ddTHH:mm:ss).
+   */
   fechaHora: string;
+  /**
+   * Estado de la cita.
+   */
   estado: string;
+  /**
+   * Motivo de la consulta.
+   */
   motivo?: string;
 }
 
@@ -26,6 +47,9 @@ export interface CitaRq {
   providedIn: 'root'
 })
 export class CitaService {
+  /**
+   * Ruta base del recurso en el backend.
+   */
   private api = `cita`;
 
   constructor(private backendService: BackendService) { }

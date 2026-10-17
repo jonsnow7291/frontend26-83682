@@ -12,6 +12,9 @@ import { environment } from 'src/environments/environment';
   providedIn: 'root'
 })
 export class ClienteService {
+  /**
+   * Ruta base del recurso en el backend.
+   */
   private api = `cliente`;
 
   constructor(private backendService: BackendService) { }

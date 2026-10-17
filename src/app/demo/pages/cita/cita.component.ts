@@ -27,40 +27,92 @@ import { MedicoService } from '../medico/service/medico.service';
 })
 export class CitaComponent implements OnInit {
 
-  // Variables para la gestión del modal Bootstrap
+  /**
+   * Instancia del modal del formulario.
+   */
   modalInstance: Modal | null = null;
+  /**
+   * Título del modal.
+   */
   titleModal = '';
+  /**
+   * Modo del formulario (C = crear, E = editar).
+   */
   modoFormulario: 'C' | 'E' = 'C';
+  /**
+   * Texto del botón de guardar.
+   */
   titleBoton = '';
 
-  // Datos del listado y filtros
+  /**
+   * Citas recibidas del backend.
+   */
   listCitas: Cita[] = [];
+  /**
+   * Texto de búsqueda actual.
+   */
   terminoBusqueda = '';
+  /**
+   * Filtro de fecha inicial (yyyy-MM-dd).
+   */
   fechaInicial = '';
+  /**
+   * Filtro de fecha final (yyyy-MM-dd).
+   */
   fechaFinal = '';
 
-  // Paginación
+  /**
+   * Página visible.
+   */
   paginaActual = 1;
+  /**
+   * Registros por página.
+   */
   readonly registrosPorPagina = 10;
 
-  // Ordenamiento de columnas
+  /**
+   * Columna por la que se ordena el listado.
+   */
   columnaOrden = 'fechaHora';
+  /**
+   * Sentido del orden (por defecto descendente: más recientes primero).
+   */
   ordenAscendente = false; // Por defecto descendente (más recientes primero)
 
-  // Formulario reactivo
+  /**
+   * Formulario reactivo de la cita.
+   */
   form!: FormGroup;
+  /**
+   * Cita en edición (`null` al crear).
+   */
   citaSeleccionada: Cita | null = null;
 
-  // Catálogos para combos
+  /**
+   * Catálogo de clientes.
+   */
   listClientes: Cliente[] = [];
+  /**
+   * Catálogo de veterinarios.
+   */
   listMedicos: Medico[] = [];
+  /**
+   * Mascotas del cliente seleccionado (combo dependiente).
+   */
   listMascotasCliente: Mascota[] = [];
+  /**
+   * Indica que se están cargando las mascotas del cliente.
+   */
   cargandoMascotas = false;
 
-  // Estados válidos del sistema
+  /**
+   * Estados válidos de una cita.
+   */
   readonly estadosPermitidos: string[] = ['Pendiente', 'Programada', 'Confirmada', 'Atendida', 'Cancelada'];
 
-  // Fecha mínima permitida para agendamiento (hoy)
+  /**
+   * Fecha mínima permitida para agendar (hoy).
+   */
   fechaMinima: string = new Date().toISOString().split('T')[0];
 
   constructor(
@@ -71,6 +123,9 @@ export class CitaComponent implements OnInit {
     private readonly formBuilder: FormBuilder
   ) { }
 
+  /**
+   * Inicializa el formulario, carga los catálogos y lista las citas.
+   */
   ngOnInit(): void {
     this.inicializarFormulario();
     this.cargarCatalogos();
@@ -333,7 +388,9 @@ export class CitaComponent implements OnInit {
     });
   }
 
-  // --- Manejo del Modal Bootstrap ---
+  /**
+   * Abre el modal del formulario.
+   */
   openModal(): void {
     const modalEl = document.getElementById('modalCita');
     if (modalEl) {
@@ -342,6 +399,9 @@ export class CitaComponent implements OnInit {
     }
   }
 
+  /**
+   * Cierra el modal y reinicia el formulario.
+   */
   closeModal(): void {
     if (this.modalInstance) {
       this.modalInstance.hide();
@@ -349,12 +409,19 @@ export class CitaComponent implements OnInit {
     this.form.reset();
   }
 
-  // --- Búsqueda, Ordenamiento y Paginación en DataTable ---
+  /**
+   * Actualiza el término de búsqueda y vuelve a la primera página.
+   * @param event evento del campo de búsqueda.
+   */
   actualizarBusqueda(event: Event): void {
     this.terminoBusqueda = (event.target as HTMLInputElement).value;
     this.paginaActual = 1;
   }
 
+  /**
+   * Ordena por la columna indicada; si ya estaba ordenada por ella, invierte el sentido.
+   * @param columna clave de la columna.
+   */
   ordenarPor(columna: string): void {
     if (this.columnaOrden === columna) {
       this.ordenAscendente = !this.ordenAscendente;
@@ -364,6 +431,9 @@ export class CitaComponent implements OnInit {
     }
   }
 
+  /**
+   * Citas que cumplen la búsqueda, ordenadas según la columna seleccionada.
+   */
   get citasFiltradas(): Cita[] {
     const termino = this.normalizarTexto(this.terminoBusqueda.trim());
     let resultado = this.listCitas;
@@ -386,8 +456,8 @@ export class CitaComponent implements OnInit {
 
     // Ordenamiento
     return resultado.sort((a, b) => {
-      let valA: any = this.obtenerValorColumna(a, this.columnaOrden);
-      let valB: any = this.obtenerValorColumna(b, this.columnaOrden);
+      const valA = this.obtenerValorColumna(a, this.columnaOrden);
+      const valB = this.obtenerValorColumna(b, this.columnaOrden);
 
       if (valA === valB) return 0;
       if (valA == null) return 1;
@@ -398,7 +468,12 @@ export class CitaComponent implements OnInit {
     });
   }
 
-  private obtenerValorColumna(c: Cita, columna: string): any {
+  /**
+   * Obtiene el valor de una cita usado para ordenar por la columna indicada.
+   * @param c       cita.
+   * @param columna clave de la columna.
+   */
+  private obtenerValorColumna(c: Cita, columna: string): string | number {
     switch (columna) {
       case 'fechaHora': return c.fechaHora ? new Date(c.fechaHora).getTime() : 0;
       case 'cliente': return `${c.cliente?.nombres ?? ''} ${c.cliente?.apellidos ?? ''}`.toLowerCase();
@@ -409,25 +484,42 @@ export class CitaComponent implements OnInit {
     }
   }
 
+  /**
+   * Citas de la página actual.
+   */
   get citasPaginadas(): Cita[] {
     const inicio = (this.paginaActual - 1) * this.registrosPorPagina;
     return this.citasFiltradas.slice(inicio, inicio + this.registrosPorPagina);
   }
 
+  /**
+   * Número total de páginas.
+   */
   get totalPaginas(): number {
     return Math.ceil(this.citasFiltradas.length / this.registrosPorPagina) || 1;
   }
 
+  /**
+   * Números de página para el paginador.
+   */
   get paginas(): number[] {
     return Array.from({ length: this.totalPaginas }, (_, i) => i + 1);
   }
 
+  /**
+   * Cambia a la página indicada si está en rango.
+   * @param pagina número de página.
+   */
   cambiarPagina(pagina: number): void {
     if (pagina >= 1 && pagina <= this.totalPaginas) {
       this.paginaActual = pagina;
     }
   }
 
+  /**
+   * Normaliza un texto: minúsculas y sin tildes.
+   * @param texto texto a normalizar.
+   */
   private normalizarTexto(texto: string): string {
     return texto
       .toLocaleLowerCase()
