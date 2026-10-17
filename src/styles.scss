@@ -45,3 +45,10 @@
 	color: #ffffff;
 	transform: translateY(-2px);
 }
+
+/* Las alertas de SweetAlert2 deben quedar por encima de los modales de Bootstrap
+   (el tema usa z-index 1072 en .modal); si no, los mensajes de error y exito que
+   se muestran con un modal abierto quedan ocultos detras de el. */
+.swal2-container {
+	z-index: 2000 !important;
+}

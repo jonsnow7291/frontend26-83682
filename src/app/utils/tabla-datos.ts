@@ -79,6 +79,7 @@ export class TablaDatos<T> {
 
   /**
    * Ordena por la columna indicada; si ya estaba ordenada por ella, invierte el sentido.
+   * Vuelve a la primera página.
    * @param columna clave de la columna.
    */
   ordenarPor(columna: string): void {
@@ -88,6 +89,7 @@ export class TablaDatos<T> {
       this.columnaOrden = columna;
       this.ordenAscendente = true;
     }
+    this.paginaActual = 1;
     this.recalcular();
   }
 
