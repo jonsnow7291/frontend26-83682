@@ -58,6 +58,16 @@ export class CitaService {
   }
 
   /**
+   * Lista las citas atendidas de una mascota (combo dependiente de historias y fórmulas).
+   *
+   * @param mascotaId Identificador de la mascota.
+   */
+  listarAtendidasPorMascota(mascotaId: number): Observable<Cita[]> {
+    const params = new HttpParams().set('mascotaId', mascotaId);
+    return this.backendService.get(environment.apiUrlAuth, this.api, "listar-atendidas-por-mascota", params);
+  }
+
+  /**
    * Registra una nueva cita médica en el sistema.
    *
    * @param citaRq Datos de la cita a registrar.
@@ -72,7 +82,7 @@ export class CitaService {
    * @param citaRq Datos actualizados de la cita.
    */
   actualizarCita(citaRq: CitaRq): Observable<Respuesta> {
-    return this.backendService.post(environment.apiUrlAuth, this.api, "actualizar", citaRq);
+    return this.backendService.put(environment.apiUrlAuth, this.api, "actualizar", citaRq);
   }
 
   /**
@@ -82,6 +92,6 @@ export class CitaService {
    */
   cancelarCita(citaId: number): Observable<Respuesta> {
     const params = new HttpParams().set('citaId', citaId);
-    return this.backendService.post(environment.apiUrlAuth, this.api, `cancelar?citaId=${citaId}`, {});
+    return this.backendService.patch(environment.apiUrlAuth, this.api, "cancelar", null, params);
   }
 }

@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl } from '@angular/forms';
+import { finalize } from 'rxjs';
 import Swal from 'sweetalert2';
 import { Modal } from 'bootstrap';
 
@@ -13,47 +14,88 @@ import { Medicamento } from 'src/app/models/medicamento';
 import { FormulaMedicaService } from './service/formula-medica.service';
 import { ClienteService } from '../cliente/service/cliente.service';
 import { MascotaService } from '../mascota/service/mascota.service';
+import { CitaService } from '../cita/service/cita.service';
 import { MedicamentoService } from '../medicamento/service/medicamento.service';
+import { PaginadorComponent } from 'src/app/demo/shared/paginador/paginador.component';
+import { TablaDatos, tiempo, nombreCompleto, mensajeError } from 'src/app/utils/tabla-datos';
 
 /**
  * Componente de gestión de fórmulas médicas.
- * Permite listar, crear, editar y ver el detalle completo de una prescripción.
- * No permite eliminar: una fórmula emitida hace parte del historial clínico.
+ * Permite listar (con filtros, ordenamiento y paginación), crear, editar y ver el
+ * detalle completo de una prescripción. No permite eliminar: una fórmula emitida
+ * hace parte del historial clínico.
  */
 @Component({
   selector: 'app-formula-medica',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PaginadorComponent],
   templateUrl: './formula-medica.component.html'
 })
 export class FormulaMedicaComponent {
   /** Duración máxima del tratamiento en días (igual a la validada en el backend). */
   readonly duracionMaximaDias = 365;
 
-  // Instancias de los modales de Bootstrap.
+  /** Instancia del modal del formulario. */
   modalFormulario: Modal | null = null;
+  /** Instancia del modal de detalle. */
   modalDetalle: Modal | null = null;
 
-  // Estado del formulario.
+  /** Título del modal del formulario. */
   titleModal = '';
+  /** Texto del botón de guardar. */
   titleBoton = '';
+  /** Formulario reactivo de la fórmula. */
   form!: FormGroup;
+  /** Fórmula en edición (`null` al crear). */
   formulaSeleccionada: FormulaMedica | null = null;
-
-  // Listado, filtro y detalle.
-  items: FormulaMedica[] = [];
-  filtro = '';
+  /** Fórmula mostrada en el modal de detalle. */
   formulaVer: FormulaMedica | null = null;
 
-  // Catálogos para los combos dependientes Cliente -> Mascota -> Cita.
+  /** Indica que se está cargando el listado. */
+  cargando = false;
+  /** Indica que se está guardando el formulario. */
+  guardando = false;
+  /** Indica que se están cargando las mascotas del cliente. */
+  cargandoMascotas = false;
+  /** Indica que se están cargando las citas de la mascota. */
+  cargandoCitas = false;
+
+  /** DataTable con búsqueda, ordenamiento (inicial: más recientes primero) y paginación. */
+  tabla = new TablaDatos<FormulaMedica>(
+    {
+      id: (f) => f.id,
+      mascota: (f) => f.cita?.mascota?.nombreMascota?.toLowerCase(),
+      cliente: (f) => nombreCompleto(f.cita?.cliente),
+      medicamento: (f) => f.medicamento?.nombre?.toLowerCase(),
+      medico: (f) => nombreCompleto(f.cita?.medico),
+      fechaEmision: (f) => tiempo(f.fechaEmision),
+      fechaCreacion: (f) => tiempo(f.fechaCreacionRegistro)
+    },
+    (f) => [
+      f.id,
+      f.cita?.mascota?.nombreMascota,
+      f.cita?.cliente?.nombres,
+      f.cita?.cliente?.apellidos,
+      f.medicamento?.nombre,
+      f.cita?.medico?.nombres,
+      f.cita?.medico?.apellidos
+    ],
+    'fechaCreacion'
+  );
+
+  /** Catálogo de clientes (primer combo dependiente). */
   clientes: Cliente[] = [];
+  /** Mascotas del cliente seleccionado. */
   mascotas: Mascota[] = [];
+  /** Citas atendidas de la mascota seleccionada. */
   citas: Cita[] = [];
+  /** Catálogo de medicamentos. */
   medicamentos: Medicamento[] = [];
 
   constructor(
     private readonly formulaService: FormulaMedicaService,
     private readonly clienteService: ClienteService,
     private readonly mascotaService: MascotaService,
+    private readonly citaService: CitaService,
     private readonly medicamentoService: MedicamentoService,
     private readonly formBuilder: FormBuilder
   ) {
@@ -87,24 +129,6 @@ export class FormulaMedicaComponent {
   }
 
   /**
-   * Fórmulas filtradas por mascota, medicamento o veterinario según el texto del filtro.
-   */
-  get itemsFiltrados(): FormulaMedica[] {
-    const texto = this.filtro.trim().toLowerCase();
-    if (!texto) {
-      return this.items;
-    }
-    return this.items.filter((formula) =>
-      [
-        formula.cita?.mascota?.nombreMascota,
-        formula.medicamento?.nombre,
-        formula.cita?.medico?.nombres,
-        formula.cita?.medico?.apellidos
-      ].some((valor) => valor?.toLowerCase().includes(texto))
-    );
-  }
-
-  /**
    * Cita seleccionada actualmente en el formulario (para mostrar su veterinario y fecha).
    */
   get citaSeleccionada(): Cita | undefined {
@@ -117,12 +141,12 @@ export class FormulaMedicaComponent {
    */
   cargarCatalogos() {
     this.clienteService.listarClientes().subscribe({
-      next: (data) => this.clientes = data,
-      error: (error) => console.error('Error al obtener los clientes:', error)
+      next: (data) => this.clientes = data ?? [],
+      error: (error) => Swal.fire('Error', mensajeError(error, 'No fue posible obtener los clientes'), 'error')
     });
     this.medicamentoService.listarMedicamentos().subscribe({
-      next: (data) => this.medicamentos = data,
-      error: (error) => console.error('Error al obtener los medicamentos:', error)
+      next: (data) => this.medicamentos = data ?? [],
+      error: (error) => Swal.fire('Error', mensajeError(error, 'No fue posible obtener los medicamentos'), 'error')
     });
   }
 
@@ -130,10 +154,13 @@ export class FormulaMedicaComponent {
    * Lista todas las fórmulas médicas.
    */
   listar() {
-    this.formulaService.listarFormulas().subscribe({
-      next: (data) => this.items = data,
-      error: (error) => Swal.fire('Error', error?.error?.message ?? 'No fue posible obtener las fórmulas', 'error')
-    });
+    this.cargando = true;
+    this.formulaService.listarFormulas()
+      .pipe(finalize(() => this.cargando = false))
+      .subscribe({
+        next: (data) => this.tabla.setItems(data),
+        error: (error) => Swal.fire('Error', mensajeError(error, 'No fue posible obtener las fórmulas'), 'error')
+      });
   }
 
   /**
@@ -144,10 +171,13 @@ export class FormulaMedicaComponent {
     if (!clienteId) {
       return;
     }
-    this.mascotaService.buscarPorCliente(clienteId).subscribe({
-      next: (data) => this.mascotas = data,
-      error: (error) => console.error('Error al obtener las mascotas:', error)
-    });
+    this.cargandoMascotas = true;
+    this.mascotaService.buscarPorCliente(clienteId)
+      .pipe(finalize(() => this.cargandoMascotas = false))
+      .subscribe({
+        next: (data) => this.mascotas = data ?? [],
+        error: (error) => Swal.fire('Error', mensajeError(error, 'No fue posible obtener las mascotas'), 'error')
+      });
   }
 
   /**
@@ -158,10 +188,13 @@ export class FormulaMedicaComponent {
     if (!mascotaId) {
       return;
     }
-    this.formulaService.listarCitasDisponibles(mascotaId).subscribe({
-      next: (data) => this.citas = data,
-      error: (error) => console.error('Error al obtener las citas:', error)
-    });
+    this.cargandoCitas = true;
+    this.citaService.listarAtendidasPorMascota(mascotaId)
+      .pipe(finalize(() => this.cargandoCitas = false))
+      .subscribe({
+        next: (data) => this.citas = data ?? [],
+        error: (error) => Swal.fire('Error', mensajeError(error, 'No fue posible obtener las citas'), 'error')
+      });
   }
 
   /**
@@ -248,12 +281,13 @@ export class FormulaMedicaComponent {
 
   /**
    * Guarda o actualiza la fórmula médica según el modo del formulario.
-   * Valida en el cliente que la fecha de emisión no sea anterior a la cita;
-   * el backend repite todas las validaciones.
+   * Valida en el cliente los campos obligatorios y que la fecha de emisión no sea
+   * anterior a la cita; el backend repite todas las validaciones.
    */
   guardar() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      Swal.fire('Campos requeridos', 'Por favor diligencie todos los campos obligatorios.', 'warning');
       return;
     }
 
@@ -280,21 +314,21 @@ export class FormulaMedicaComponent {
       ? this.formulaService.actualizarFormula(rq)
       : this.formulaService.guardarFormula(rq);
 
-    peticion.subscribe({
-      next: (respuesta) => {
-        Swal.fire('Éxito', respuesta.message ?? 'Operación exitosa', 'success');
-        this.cerrarModal();
-        this.listar();
-      },
-      error: (error) => {
-        const mensaje = error?.error?.message ?? 'No fue posible completar la operación';
-        Swal.fire('Error', mensaje, 'error');
-      }
-    });
+    this.guardando = true;
+    peticion
+      .pipe(finalize(() => this.guardando = false))
+      .subscribe({
+        next: (respuesta) => {
+          Swal.fire('Éxito', respuesta.message ?? 'Operación exitosa', 'success');
+          this.cerrarModal();
+          this.listar();
+        },
+        error: (error) => Swal.fire('Error', mensajeError(error, 'No fue posible completar la operación'), 'error')
+      });
   }
 
   /**
-   * Consulta el detalle completo de una fórmula y lo muestra en el modal "Ver detalle".
+   * Consulta el detalle completo de una fórmula y lo muestra en el modal "Ver".
    */
   verDetalle(formula: FormulaMedica) {
     if (!formula.id) {
@@ -309,10 +343,7 @@ export class FormulaMedicaComponent {
           this.modalDetalle.show();
         }
       },
-      error: (error) => {
-        const mensaje = error?.error?.message ?? 'No fue posible obtener el detalle de la fórmula';
-        Swal.fire('Error', mensaje, 'error');
-      }
+      error: (error) => Swal.fire('Error', mensajeError(error, 'No fue posible obtener el detalle de la fórmula'), 'error')
     });
   }
 

@@ -3,9 +3,10 @@
         <div class="card-header">
             <div class="row g-2 align-items-end">
                 <div class="col-md-4">
-                    <label class="form-label mb-0">Buscar</label>
-                    <input type="text" class="form-control" placeholder="Mascota, medicamento o veterinario"
-                        [(ngModel)]="filtro" name="filtro" />
+                    <label class="form-label mb-0" for="buscarFormula">Buscar</label>
+                    <input id="buscarFormula" type="text" class="form-control"
+                        placeholder="Mascota, cliente, medicamento o veterinario"
+                        [ngModel]="tabla.terminoBusqueda" (ngModelChange)="tabla.buscar($event)" />
                 </div>
                 <div class="col-md-auto ms-auto">
                     <button class="btn btn-primary" type="button" (click)="nuevaFormula()">
@@ -16,41 +17,68 @@
         </div>
         <div class="card-body">
             <div class="table-responsive">
-                <table class="table table-striped">
+                <table class="table table-striped table-hover align-middle">
                     <thead>
                         <tr>
-                            <th class="text-center">Fórmula</th>
-                            <th class="text-center">Mascota</th>
-                            <th class="text-center">Medicamento</th>
-                            <th class="text-center">Veterinario</th>
-                            <th class="text-center">Fecha de emisión</th>
+                            <th class="text-center" role="button" (click)="tabla.ordenarPor('id')">
+                                Fórmula <i class="fa" [ngClass]="tabla.iconoOrden('id')"></i>
+                            </th>
+                            <th role="button" (click)="tabla.ordenarPor('mascota')">
+                                Mascota <i class="fa" [ngClass]="tabla.iconoOrden('mascota')"></i>
+                            </th>
+                            <th role="button" (click)="tabla.ordenarPor('cliente')">
+                                Cliente <i class="fa" [ngClass]="tabla.iconoOrden('cliente')"></i>
+                            </th>
+                            <th role="button" (click)="tabla.ordenarPor('medicamento')">
+                                Medicamento <i class="fa" [ngClass]="tabla.iconoOrden('medicamento')"></i>
+                            </th>
+                            <th role="button" (click)="tabla.ordenarPor('medico')">
+                                Veterinario <i class="fa" [ngClass]="tabla.iconoOrden('medico')"></i>
+                            </th>
+                            <th class="text-center" role="button" (click)="tabla.ordenarPor('fechaEmision')">
+                                Emisión <i class="fa" [ngClass]="tabla.iconoOrden('fechaEmision')"></i>
+                            </th>
+                            <th class="text-center" role="button" (click)="tabla.ordenarPor('fechaCreacion')">
+                                Creación <i class="fa" [ngClass]="tabla.iconoOrden('fechaCreacion')"></i>
+                            </th>
                             <th class="text-center">Acciones</th>
                         </tr>
                     </thead>
-                    <tbody *ngIf="itemsFiltrados.length === 0">
-                        <tr>
-                            <td colspan="6" class="text-center">No hay fórmulas registradas</td>
-                        </tr>
-                    </tbody>
-                    <tbody *ngIf="itemsFiltrados.length > 0">
-                        <tr *ngFor="let formula of itemsFiltrados">
-                            <td class="text-center">{{ formula.id }}</td>
-                            <td class="text-center">{{ formula.cita?.mascota?.nombreMascota }}</td>
-                            <td class="text-center">{{ formula.medicamento?.nombre }}</td>
-                            <td class="text-center">{{ formula.cita?.medico?.nombres }} {{ formula.cita?.medico?.apellidos }}</td>
-                            <td class="text-center">{{ formula.fechaEmision | date:'yyyy-MM-dd HH:mm' }}</td>
-                            <td class="text-center">
-                                <button class="btn btn-sm btn-outline-info me-1" (click)="verDetalle(formula)">
-                                    Ver
-                                </button>
-                                <button class="btn btn-sm btn-outline-primary" (click)="abrirEdicion(formula)">
-                                    Editar
-                                </button>
+                    <tbody>
+                        <tr *ngIf="cargando">
+                            <td colspan="8" class="text-center py-4">
+                                <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
+                                Cargando fórmulas...
                             </td>
                         </tr>
+                        <tr *ngIf="!cargando && tabla.filtrados.length === 0">
+                            <td colspan="8" class="text-center">
+                                {{ tabla.totalRegistros === 0 ? 'No hay fórmulas registradas' : 'No se encontraron resultados' }}
+                            </td>
+                        </tr>
+                        <ng-container *ngIf="!cargando">
+                            <tr *ngFor="let formula of tabla.paginados">
+                                <td class="text-center">{{ formula.id }}</td>
+                                <td>{{ formula.cita?.mascota?.nombreMascota }}</td>
+                                <td>{{ formula.cita?.cliente?.nombres }} {{ formula.cita?.cliente?.apellidos }}</td>
+                                <td>{{ formula.medicamento?.nombre }}</td>
+                                <td>{{ formula.cita?.medico?.nombres }} {{ formula.cita?.medico?.apellidos }}</td>
+                                <td class="text-center">{{ formula.fechaEmision | date:'yyyy-MM-dd HH:mm' }}</td>
+                                <td class="text-center">{{ formula.fechaCreacionRegistro | date:'yyyy-MM-dd HH:mm' }}</td>
+                                <td class="text-center text-nowrap">
+                                    <button class="btn btn-sm btn-outline-info me-1" (click)="verDetalle(formula)">
+                                        Ver
+                                    </button>
+                                    <button class="btn btn-sm btn-outline-primary" (click)="abrirEdicion(formula)">
+                                        Editar
+                                    </button>
+                                </td>
+                            </tr>
+                        </ng-container>
                     </tbody>
                 </table>
             </div>
+            <app-paginador [tabla]="tabla"></app-paginador>
         </div>
     </div>
 </div>
@@ -83,7 +111,7 @@
                             <select id="mascotaId" class="form-select" formControlName="mascotaId"
                                 (change)="onMascotaChange(form.value.mascotaId)"
                                 [class.is-invalid]="f['mascotaId'].touched && f['mascotaId'].invalid">
-                                <option [ngValue]="null" disabled>Seleccione una mascota</option>
+                                <option [ngValue]="null" disabled>{{ cargandoMascotas ? 'Cargando...' : 'Seleccione una mascota' }}</option>
                                 <option *ngFor="let mascota of mascotas" [ngValue]="mascota.mascotaId">
                                     {{ mascota.nombreMascota }}
                                 </option>
@@ -94,13 +122,13 @@
                             <label for="citaId" class="form-label">Cita atendida</label>
                             <select id="citaId" class="form-select" formControlName="citaId"
                                 [class.is-invalid]="f['citaId'].touched && f['citaId'].invalid">
-                                <option [ngValue]="null" disabled>Seleccione una cita</option>
+                                <option [ngValue]="null" disabled>{{ cargandoCitas ? 'Cargando...' : 'Seleccione una cita' }}</option>
                                 <option *ngFor="let cita of citas" [ngValue]="cita.id">
                                     #{{ cita.id }} - {{ cita.fechaHora | date:'yyyy-MM-dd HH:mm' }}
                                 </option>
                             </select>
                             <div class="invalid-feedback">Seleccione una cita atendida.</div>
-                            <div class="form-text" *ngIf="form.value.mascotaId && citas.length === 0">
+                            <div class="form-text" *ngIf="form.value.mascotaId && !cargandoCitas && citas.length === 0">
                                 La mascota no tiene citas atendidas.
                             </div>
                         </div>
@@ -154,7 +182,10 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cerrar</button>
-                <button type="button" class="btn btn-primary" (click)="guardar()">{{ titleBoton }}</button>
+                <button type="button" class="btn btn-primary" [disabled]="guardando" (click)="guardar()">
+                    <span *ngIf="guardando" class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
+                    {{ titleBoton }}
+                </button>
             </div>
         </div>
     </div>

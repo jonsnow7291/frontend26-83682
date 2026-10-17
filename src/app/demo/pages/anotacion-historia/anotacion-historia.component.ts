@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl } from '@angular/forms';
+import { finalize } from 'rxjs';
 import Swal from 'sweetalert2';
 import { Modal } from 'bootstrap';
 
@@ -11,13 +12,16 @@ import { Medico } from 'src/app/models/medico';
 import { AnotacionHistoriaService } from './service/anotacion-historia.service';
 import { HistoriaMedicaService } from '../historia-medica/service/historia-medica.service';
 import { MedicoService } from '../medico/service/medico.service';
+import { PaginadorComponent } from 'src/app/demo/shared/paginador/paginador.component';
+import { TablaDatos, tiempo, nombreCompleto, mensajeError } from 'src/app/utils/tabla-datos';
 
 /**
- * Componente de gestión de anotaciones de una historia médica.
+ * Componente de gestión de anotaciones de una historia médica: lista (con filtro,
+ * ordenamiento y paginación), registra y edita anotaciones.
  */
 @Component({
   selector: 'app-anotacion-historia',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule],
+  imports: [CommonModule, FormsModule, ReactiveFormsModule, PaginadorComponent],
   templateUrl: './anotacion-historia.component.html'
 })
 export class AnotacionHistoriaComponent {
@@ -28,7 +32,21 @@ export class AnotacionHistoriaComponent {
   form!: FormGroup;
   anotacionSeleccionada: AnotacionHistoria | null = null;
 
-  items: AnotacionHistoria[] = [];
+  /** Indica que se está cargando el listado. */
+  cargando = false;
+  /** Indica que se está guardando el formulario. */
+  guardando = false;
+
+  /** DataTable de anotaciones, de la más reciente a la más antigua. */
+  tabla = new TablaDatos<AnotacionHistoria>(
+    {
+      fecha: (a) => tiempo(a.fecha),
+      medico: (a) => nombreCompleto(a.medico)
+    },
+    (a) => [a.descripcion, a.observacion, a.diagnostico, a.medico?.nombres, a.medico?.apellidos],
+    'fecha'
+  );
+
   historias: HistoriaMedica[] = [];
   medicos: Medico[] = [];
   historiaId: number | null = null;
@@ -50,7 +68,9 @@ export class AnotacionHistoriaComponent {
     this.form = this.formBuilder.group({
       historiaId: [null, Validators.required],
       medicoId: [null, Validators.required],
-      descripcion: ['', Validators.required]
+      descripcion: ['', Validators.required],
+      observacion: [''],
+      diagnostico: ['', Validators.required]
     });
   }
 
@@ -66,12 +86,12 @@ export class AnotacionHistoriaComponent {
           this.listar();
         }
       },
-      error: (error) => console.error('Error al obtener las historias:', error)
+      error: (error) => Swal.fire('Error', mensajeError(error, 'No fue posible obtener las historias'), 'error')
     });
 
     this.medicoService.listarMedicos().subscribe({
       next: (data) => this.medicos = data,
-      error: (error) => console.error('Error al obtener los médicos:', error)
+      error: (error) => Swal.fire('Error', mensajeError(error, 'No fue posible obtener los veterinarios'), 'error')
     });
   }
 
@@ -87,13 +107,16 @@ export class AnotacionHistoriaComponent {
    */
   listar() {
     if (this.historiaId === null) {
-      this.items = [];
+      this.tabla.setItems([]);
       return;
     }
-    this.anotacionService.listarAnotaciones(this.historiaId).subscribe({
-      next: (data) => this.items = data,
-      error: (error) => Swal.fire('Error', error?.error?.message ?? 'No fue posible obtener las anotaciones', 'error')
-    });
+    this.cargando = true;
+    this.anotacionService.listarAnotaciones(this.historiaId)
+      .pipe(finalize(() => this.cargando = false))
+      .subscribe({
+        next: (data) => this.tabla.setItems(data),
+        error: (error) => Swal.fire('Error', mensajeError(error, 'No fue posible obtener las anotaciones'), 'error')
+      });
   }
 
   /**
@@ -114,7 +137,9 @@ export class AnotacionHistoriaComponent {
     this.form.patchValue({
       historiaId: anotacion.historiaMedica?.id ?? null,
       medicoId: anotacion.medico?.id ?? null,
-      descripcion: anotacion.descripcion ?? ''
+      descripcion: anotacion.descripcion ?? '',
+      observacion: anotacion.observacion ?? '',
+      diagnostico: anotacion.diagnostico ?? ''
     });
     this.abrirModal('E');
   }
@@ -157,6 +182,7 @@ export class AnotacionHistoriaComponent {
   guardar() {
     if (this.form.invalid) {
       this.form.markAllAsTouched();
+      Swal.fire('Campos requeridos', 'Por favor diligencie todos los campos obligatorios.', 'warning');
       return;
     }
 
@@ -164,24 +190,26 @@ export class AnotacionHistoriaComponent {
       anotacionId: this.anotacionSeleccionada?.id,
       historiaId: Number(this.form.value.historiaId),
       medicoId: Number(this.form.value.medicoId),
-      descripcion: this.form.value.descripcion
+      descripcion: this.form.value.descripcion,
+      observacion: this.form.value.observacion || undefined,
+      diagnostico: this.form.value.diagnostico
     };
 
     const peticion = this.anotacionSeleccionada
       ? this.anotacionService.actualizarAnotacion(rq)
       : this.anotacionService.guardarAnotacion(rq);
 
-    peticion.subscribe({
-      next: (respuesta) => {
-        Swal.fire('Éxito', respuesta.message ?? 'Operación exitosa', 'success');
-        this.cerrarModal();
-        this.historiaId = rq.historiaId;
-        this.listar();
-      },
-      error: (error) => {
-        const mensaje = error?.error?.message ?? 'No fue posible completar la operación';
-        Swal.fire('Error', mensaje, 'error');
-      }
-    });
+    this.guardando = true;
+    peticion
+      .pipe(finalize(() => this.guardando = false))
+      .subscribe({
+        next: (respuesta) => {
+          Swal.fire('Éxito', respuesta.message ?? 'Operación exitosa', 'success');
+          this.cerrarModal();
+          this.historiaId = rq.historiaId ?? null;
+          this.listar();
+        },
+        error: (error) => Swal.fire('Error', mensajeError(error, 'No fue posible completar la operación'), 'error')
+      });
   }
 }

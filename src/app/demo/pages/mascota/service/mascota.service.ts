@@ -36,6 +36,16 @@ export class MascotaService {
   }
 
   /**
+   * Consulta una mascota específica por su identificador.
+   *
+   * @param mascotaId Identificador de la mascota.
+   */
+  consultarMascota(mascotaId: number): Observable<Mascota> {
+    const params = new HttpParams().set('mascotaId', mascotaId);
+    return this.backendService.get(environment.apiUrlAuth, this.api, "consultar", params);
+  }
+
+  /**
    * Registra una nueva mascota en el sistema.
    *
    * @param mascota Datos de la mascota a registrar.
@@ -50,6 +60,6 @@ export class MascotaService {
    * @param mascota Datos actualizados de la mascota.
    */
   actualizarMascota(mascota: MascotaRq): Observable<Respuesta> {
-    return this.backendService.post(environment.apiUrlAuth, this.api, "actualizar", mascota);
+    return this.backendService.put(environment.apiUrlAuth, this.api, "actualizar", mascota);
   }
 }

@@ -1,7 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Cita } from 'src/app/models/cita';
 import { FormulaMedica } from 'src/app/models/formula-medica';
 import { FormulaMedicaRq } from 'src/app/models/formula-medica-rq';
 import { Respuesta } from 'src/app/models/respuesta';
@@ -36,15 +35,6 @@ export class FormulaMedicaService {
   }
 
   /**
-   * Lista las citas atendidas de una mascota, sobre las que se puede emitir una fórmula.
-   * @param mascotaId identificador de la mascota.
-   */
-  listarCitasDisponibles(mascotaId: number): Observable<Cita[]> {
-    const params = new HttpParams().set('mascotaId', mascotaId);
-    return this.backendService.get(environment.apiUrlAuth, this.api, "citas-disponibles", params);
-  }
-
-  /**
    * Registra una nueva fórmula médica.
    * @param formula datos de la fórmula a registrar.
    */
@@ -57,6 +47,6 @@ export class FormulaMedicaService {
    * @param formula datos actualizados de la fórmula (incluye `formulaId`).
    */
   actualizarFormula(formula: FormulaMedicaRq): Observable<Respuesta> {
-    return this.backendService.post(environment.apiUrlAuth, this.api, "actualizar", formula);
+    return this.backendService.put(environment.apiUrlAuth, this.api, "actualizar", formula);
   }
 }
