@@ -1,13 +1,103 @@
-<app-tabla-listado [titulo]="titulo" [columnas]="columnas" [items]="items">
-    <div filtros class="row g-2 justify-content-md-end">
-        <div class="col-md-8">
-            <label class="form-label mb-0">Historia médica</label>
-            <select class="form-select" [(ngModel)]="historiaId" (ngModelChange)="listar()" name="historiaId">
-                <option [ngValue]="null" disabled>Seleccione una historia</option>
-                <option *ngFor="let h of historias" [ngValue]="h.id">
-                    #{{ h.id }} - {{ h.mascota?.nombreMascota }}
-                </option>
-            </select>
+<div class="container-fluid">
+    <div class="card mb-3">
+        <div class="card-header">
+            <div class="row g-2 align-items-end">
+                <div class="col-md-6">
+                    <label class="form-label mb-0">Historia médica</label>
+                    <select class="form-select" [(ngModel)]="historiaId" (ngModelChange)="listar()" name="historiaId">
+                        <option [ngValue]="null" disabled>Seleccione una historia</option>
+                        <option *ngFor="let h of historias" [ngValue]="h.id">
+                            #{{ h.id }} - {{ h.mascota?.nombreMascota }}
+                        </option>
+                    </select>
+                </div>
+                <div class="col-md-auto ms-auto">
+                    <button class="btn btn-primary" type="button" (click)="nuevaAnotacion()">
+                        <i class="fa fa-plus" aria-hidden="true"></i>&nbsp; Nueva anotación
+                    </button>
+                </div>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th class="text-center">Fecha</th>
+                            <th class="text-center">Médico</th>
+                            <th>Descripción</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody *ngIf="items.length === 0">
+                        <tr>
+                            <td colspan="4" class="text-center">No hay anotaciones registradas</td>
+                        </tr>
+                    </tbody>
+                    <tbody *ngIf="items.length > 0">
+                        <tr *ngFor="let anotacion of items">
+                            <td class="text-center">{{ anotacion.fecha | date:'yyyy-MM-dd HH:mm' }}</td>
+                            <td class="text-center">{{ anotacion.medico?.nombres }} {{ anotacion.medico?.apellidos }}</td>
+                            <td>{{ anotacion.descripcion }}</td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-outline-primary" (click)="abrirEdicion(anotacion)">
+                                    Editar
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
-</app-tabla-listado>
+</div>
+
+<!-- Modal formulario -->
+<div class="modal fade" id="modalAnotacion" tabindex="-1" aria-labelledby="modalAnotacionLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h1 class="modal-title fs-5" id="modalAnotacionLabel">{{ titleModal }}</h1>
+                <button type="button" class="btn-close" aria-label="Close" (click)="cerrarModal()"></button>
+            </div>
+            <div class="modal-body">
+                <form [formGroup]="form" (ngSubmit)="guardar()">
+                    <div class="row">
+                        <div class="col-md-6 mb-3">
+                            <label for="historiaId" class="form-label">Historia médica</label>
+                            <select id="historiaId" class="form-select" formControlName="historiaId"
+                                [class.is-invalid]="f['historiaId'].touched && f['historiaId'].invalid">
+                                <option [ngValue]="null" disabled>Seleccione una historia</option>
+                                <option *ngFor="let historia of historias" [ngValue]="historia.id">
+                                    #{{ historia.id }} - {{ historia.mascota?.nombreMascota }}
+                                </option>
+                            </select>
+                            <div class="invalid-feedback">Seleccione una historia.</div>
+                        </div>
+                        <div class="col-md-6 mb-3">
+                            <label for="medicoId" class="form-label">Médico</label>
+                            <select id="medicoId" class="form-select" formControlName="medicoId"
+                                [class.is-invalid]="f['medicoId'].touched && f['medicoId'].invalid">
+                                <option [ngValue]="null" disabled>Seleccione un médico</option>
+                                <option *ngFor="let medico of medicos" [ngValue]="medico.id">
+                                    {{ medico.nombres }} {{ medico.apellidos }}
+                                </option>
+                            </select>
+                            <div class="invalid-feedback">Seleccione un médico.</div>
+                        </div>
+                        <div class="col-12 mb-3">
+                            <label for="descripcion" class="form-label">Descripción</label>
+                            <textarea id="descripcion" class="form-control" rows="4" formControlName="descripcion"
+                                [class.is-invalid]="f['descripcion'].touched && f['descripcion'].invalid"></textarea>
+                            <div class="invalid-feedback">La descripción es obligatoria.</div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cerrar</button>
+                <button type="button" class="btn btn-primary" (click)="guardar()">{{ titleBoton }}</button>
+            </div>
+        </div>
+    </div>
+</div>

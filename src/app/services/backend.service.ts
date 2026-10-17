@@ -54,7 +54,8 @@ export class BackendService {
     endpoint: string,
     service: string,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    data: any
+    data: any,
+    params?: HttpParams
   ): Observable<T> {
     const tokenRecuperado = localStorage.getItem('token') || ''; // Evita `null`
     const headers = new HttpHeaders({
@@ -63,6 +64,7 @@ export class BackendService {
     });
     return this.http.post<T>(`${urlApi}/${endpoint}/${service}`, data, {
       headers: headers,
+      params: params,
     });
   }
 
