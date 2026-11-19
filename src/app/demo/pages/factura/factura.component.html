@@ -1,0 +1,73 @@
+<div class="container-fluid">
+    <div class="card mb-3">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Facturación</h5>
+            <div class="d-flex gap-2">
+                <input type="number" class="form-control" [(ngModel)]="atencionId" placeholder="ID de atención" />
+                <button class="btn btn-primary" (click)="generarDesdeAtencion()" [disabled]="cargando">
+                    {{ cargando ? 'Generando...' : 'Generar factura' }}
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Factura</th>
+                            <th>Atención</th>
+                            <th>Cliente</th>
+                            <th>Mascota</th>
+                            <th class="text-end">Total</th>
+                            <th class="text-center">Estado</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody *ngIf="facturas.length === 0">
+                        <tr><td colspan="7" class="text-center">No hay facturas registradas</td></tr>
+                    </tbody>
+                    <tbody *ngIf="facturas.length > 0">
+                        <tr *ngFor="let f of facturas">
+                            <td>#{{ f.id }}</td>
+                            <td>#{{ f.atencionId }}</td>
+                            <td>{{ f.clienteNombre }}</td>
+                            <td>{{ f.mascotaNombre }}</td>
+                            <td class="text-end">{{ f.total | currency:'COP':'symbol':'1.0-0' }}</td>
+                            <td class="text-center"><span class="badge {{ estadoBadge(f.estado) }}">{{ f.estado }}</span></td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-outline-info" (click)="descargarPDF(f.id!)" title="Descargar PDF">PDF</button>
+                                <button *ngIf="f.estado === 'pendiente' || f.estado === 'parcial'" class="btn btn-sm btn-outline-primary" (click)="facturaSeleccionada = f" data-bs-toggle="modal" data-bs-target="#modalPago">Registrar pago</button>
+                                <button *ngIf="f.estado === 'pendiente'" class="btn btn-sm btn-outline-danger" (click)="facturaSeleccionada = f">Anular</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalPago" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Registrar pago - Factura #{{ facturaSeleccionada?.id }}</h5>
+                    <button type="button" class="btn-close" (click)="facturaSeleccionada = null"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Total:</strong> {{ facturaSeleccionada?.total | currency:'COP':'symbol':'1.0-0' }}</p>
+                    <p><strong>Pagado:</strong> {{ facturaSeleccionada?.pagado | currency:'COP':'symbol':'1.0-0' }}</p>
+                    <p><strong>Saldo:</strong> {{ (facturaSeleccionada?.total ?? 0) - (facturaSeleccionada?.pagado ?? 0) | currency:'COP':'symbol':'1.0-0' }}</p>
+                    <div class="mb-3">
+                        <label class="form-label">Monto a pagar</label>
+                        <input type="number" class="form-control" [(ngModel)]="montoPago" required />
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" (click)="facturaSeleccionada = null">Cerrar</button>
+                    <button type="button" class="btn btn-success" (click)="registrarPago()" [disabled]="!montoPago || montoPago <= 0">Registrar pago</button>
+                    <button type="button" class="btn btn-danger ms-2" (click)="anular()">Anular factura</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

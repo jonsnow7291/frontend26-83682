@@ -1,0 +1,79 @@
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Despacho de medicamentos</h5>
+            <button class="btn btn-outline-primary" (click)="listar()">Refrescar</button>
+        </div>
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Fórmula</th>
+                            <th>Veterinario</th>
+                            <th>Propietario</th>
+                            <th>Mascota</th>
+                            <th class="text-center">Estado despacho</th>
+                            <th class="text-center">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody *ngIf="despachos.length === 0">
+                        <tr><td colspan="6" class="text-center">No hay fórmulas pendientes de despacho</td></tr>
+                    </tbody>
+                    <tbody *ngIf="despachos.length > 0">
+                        <tr *ngFor="let d of despachos">
+                            <td>#{{ d.formulaId }}</td>
+                            <td>{{ d.veterinario }}</td>
+                            <td>{{ d.propietario }}</td>
+                            <td>{{ d.mascota }}</td>
+                            <td class="text-center"><span class="badge {{ estadoBadge(d.estadoDespacho) }}">{{ d.estadoDespacho }}</span></td>
+                            <td class="text-center">
+                                <button class="btn btn-sm btn-outline-info" (click)="verDetalle(d)">Ver detalle</button>
+                                <button *ngIf="d.estadoDespacho !== 'despachado' && d.estadoDespacho !== 'cancelado'" class="btn btn-sm btn-success" (click)="verDetalle(d); $event.stopPropagation();">Confirmar entrega</button>
+                                <button *ngIf="d.estadoDespacho === 'pendiente_disponibilidad'" class="btn btn-sm btn-outline-danger" (click)="verDetalle(d); $event.stopPropagation();">Cancelar</button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div class="modal fade" id="modalDetalleDespacho" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Detalle de despacho - Fórmula #{{ despachoSeleccionado?.formulaId }}</h5>
+                    <button type="button" class="btn-close" (click)="despachoSeleccionado = null"></button>
+                </div>
+                <div class="modal-body">
+                    <p><strong>Veterinario:</strong> {{ despachoSeleccionado?.veterinario }}</p>
+                    <p><strong>Propietario:</strong> {{ despachoSeleccionado?.propietario }}</p>
+                    <p><strong>Mascota:</strong> {{ despachoSeleccionado?.mascota }}</p>
+                    <p><strong>Estado:</strong> <span class="badge {{ estadoBadge(despachoSeleccionado?.estadoDespacho ?? '') }}">{{ despachoSeleccionado?.estadoDespacho }}</span></p>
+                    <h6>Medicamentos:</h6>
+                    <table class="table table-sm table-bordered">
+                        <thead>
+                            <tr><th>Medicamento</th><th class="text-center">Recetado</th><th class="text-center">Entregado</th><th class="text-center">Lote</th><th class="text-center">Vencimiento</th></tr>
+                        </thead>
+                        <tbody>
+                            <tr *ngFor="let det of (despachoSeleccionado?.detalles ?? [])">
+                                <td>{{ det.medicamentoNombre }}</td>
+                                <td class="text-center">{{ det.cantidadRecetada }}</td>
+                                <td class="text-center">{{ det.cantidadEntregada }}</td>
+                                <td class="text-center">{{ det.lote ?? '-' }}</td>
+                                <td class="text-center">{{ det.fechaVencimiento | date:'dd/MM/yyyy' }}</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" (click)="despachoSeleccionado = null">Cerrar</button>
+                    <button *ngIf="despachoSeleccionado?.estadoDespacho !== 'despachado' && despachoSeleccionado?.estadoDespacho !== 'cancelado'" class="btn btn-success" (click)="confirmarEntrega()">Confirmar entrega</button>
+                    <button *ngIf="despachoSeleccionado?.estadoDespacho === 'pendiente_disponibilidad'" class="btn btn-outline-danger ms-2" (click)="cancelar()">Cancelar despacho</button>
+                    <button type="button" class="btn btn-outline-primary ms-2" (click)="descargarComprobante(despachoSeleccionado?.id!)" title="Descargar comprobante PDF">Comprobante PDF</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

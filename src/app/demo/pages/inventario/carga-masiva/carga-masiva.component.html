@@ -1,0 +1,55 @@
+<div class="container-fluid">
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5>Carga masiva de inventario</h5>
+        </div>
+        <div class="card-body">
+            <div class="row g-3">
+                <div class="col-md-4">
+                    <button class="btn btn-outline-primary w-100" (click)="descargarPlantilla()">
+                        <i class="fa fa-download" aria-hidden="true"></i> Descargar plantilla
+                    </button>
+                </div>
+                <div class="col-md-6">
+                    <input type="file" class="form-control" accept=".xlsx,.csv" (change)="onFileChange($event)" />
+                </div>
+                <div class="col-md-2">
+                    <button class="btn btn-primary w-100" (click)="previsualizar()" [disabled]="cargando || !archivo">
+                        {{ cargando ? 'Procesando...' : 'Previsualizar' }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div *ngIf="preview" class="card">
+        <div class="card-header">
+            <h5>Previsualización de carga</h5>
+        </div>
+        <div class="card-body">
+            <div class="row mb-3">
+                <div class="col-md-6"><strong>Filas válidas:</strong> {{ preview.filasValidas?.length }}</div>
+                <div class="col-md-6"><strong>Filas con error:</strong> {{ preview.filasConError?.length }}</div>
+            </div>
+            <div class="table-responsive mb-3">
+                <table class="table table-sm table-striped">
+                    <thead><tr><th>#</th><th>Nombre</th><th>Código</th><th>Estado</th><th>Motivo</th></tr></thead>
+                    <tbody>
+                        <tr *ngFor="let fila of preview.filasValidas; let i = index">
+                            <td>{{ i + 1 }}</td><td>{{ fila.nombre }}</td><td>{{ fila.codigo }}</td>
+                            <td><span class="badge bg-success">Válida</span></td><td>-</td>
+                        </tr>
+                        <tr *ngFor="let fila of preview.filasConError; let i = index">
+                            <td>{{ i + 1 }}</td><td>{{ fila.nombre }}</td><td>{{ fila.codigo }}</td>
+                            <td><span class="badge bg-danger">Error</span></td><td>{{ fila.motivo }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <div class="d-flex gap-2">
+                <button class="btn btn-success" (click)="confirmar()" [disabled]="!preview.filasValidas?.length">Confirmar importación</button>
+                <button class="btn btn-outline-danger" (click)="descargarInformeErrores()">Descargar informe de errores</button>
+            </div>
+        </div>
+    </div>
+</div>

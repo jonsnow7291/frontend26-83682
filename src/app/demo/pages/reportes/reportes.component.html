@@ -1,0 +1,52 @@
+<div class="container-fluid">
+    <div class="card">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="mb-0">Reportes</h5>
+            <span class="badge bg-primary">Solo ADMIN</span>
+        </div>
+        <div class="card-body">
+            <div class="row g-3 mb-3">
+                <div class="col-md-3">
+                    <label class="form-label">Tipo de reporte</label>
+                    <select class="form-select" [(ngModel)]="tipoSeleccionado" name="tipo">
+                        <option *ngFor="let t of tipos" [value]="t.valor">{{ t.nombre }}</option>
+                    </select>
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Desde</label>
+                    <input type="date" class="form-control" [(ngModel)]="fechaInicio" name="fechaInicio" />
+                </div>
+                <div class="col-md-2">
+                    <label class="form-label">Hasta</label>
+                    <input type="date" class="form-control" [(ngModel)]="fechaFin" name="fechaFin" />
+                </div>
+                <div class="col-md-2 d-flex align-items-end">
+                    <button class="btn btn-primary w-100" (click)="obtenerReporte()" [disabled]="cargando">
+                        {{ cargando ? 'Consultando...' : 'Consultar' }}
+                    </button>
+                </div>
+                <div class="col-md-2 d-flex align-items-end gap-2">
+                    <button class="btn btn-outline-success w-100" (click)="descargarPDF()" [disabled]="cargando || datos.length === 0">PDF</button>
+                    <button class="btn btn-outline-success w-100" (click)="descargarExcel()" [disabled]="cargando || datos.length === 0">Excel</button>
+                </div>
+            </div>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            <th *ngFor="let col of totalColumnas">{{ col }}</th>
+                        </tr>
+                    </thead>
+                    <tbody *ngIf="datos.length === 0">
+                        <tr><td [attr.colspan]="totalColumnas.length" class="text-center">No hay datos</td></tr>
+                    </tbody>
+                    <tbody *ngIf="datos.length > 0">
+                        <tr *ngFor="let fila of datos">
+                            <td *ngFor="let col of totalColumnas">{{ fila[col] }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
