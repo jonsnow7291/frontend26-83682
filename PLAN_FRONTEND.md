@@ -42,7 +42,7 @@ Angular 19 con la plantilla Datta Able. Páginas en `src/app/demo/pages/`, servi
 | `DESPACHO_MEDICO` | **Solo** inventario (solo lectura) y despacho |
 
 - [x] Descarga de archivos con token (`BackendService.getBlob` + `utils/descarga.ts`).
-- [x] `Dockerfile` (node → nginx con fallback de SPA), `nginx.conf`, `.dockerignore`; servicio `frontend` en el `docker-compose.yml` de la **carpeta raíz** (`include` del compose del backend).
+- [x] `Dockerfile` (node → nginx con fallback de SPA y proxy `/clinica/v1` → `backend:8080`), `nginx.conf`, `.dockerignore`; servicio `frontend` en el `docker-compose.yml` de la **carpeta raíz** (`include` del compose del backend).
 
 ### Fase 1 – Inventario y carga masiva (20 %)
 - [x] Listado con búsqueda, filtros (agotados, stock bajo, próximos a vencer, vencidos, tipo) y paginación; badges de estado.
@@ -89,11 +89,11 @@ Visible **solo** para `DESPACHO_MEDICO` (guard + backend).
 - [x] También en navegador: **atención médica** (abrir, guardar, finalizar → prefactura PDF), **tarifas** (crear, modificar, historial), **calendario** (nueva cita, solapamiento y fuera de horario rechazados, vistas mes/semana/día, detalle, reprogramar, confirmar, descarga del Excel).
 - [x] Último recorrido en navegador: **especialidades** (alta, código repetido rechazado, edición, inactivar), **horarios** (listado, franja cruzada rechazada, alta), **descuento** autorizado por ADMIN, **anulación** de factura con motivo, **historial de citas de la mascota** y **cancelar cita con motivo** (se conserva en el calendario).
 - [x] **Ajuste visual corregido:** en Inventario y Fórmulas las columnas secundarias (tipo, Invima, mínimo, estado de despacho) pasan a la línea de detalle por debajo de 1400 px y los botones de acción se apilan; medido: ya no hay desborde a 1280 px.
-- [ ] Pendiente en navegador: la descarga de los PDF (se verificó por API; el Excel de citas sí se descargó y se revisó), responsive en móvil/tablet y `docker compose up --build`.
+- [ ] Pendiente en navegador: la descarga de los PDF (se verificó por API; el Excel de citas sí se descargó y se revisó) y responsive en móvil/tablet.
 - [ ] Revisión responsive en móvil/tablet/escritorio.
 - [ ] Capturas de las 5 evidencias (ver `../PLAN_DOCUMENTACION.md`).
 - [ ] TsDoc completo (hay en servicios y componentes nuevos; falta repasar los heredados).
-- [ ] `docker compose up --build` de punta a punta (el compose está validado con `docker compose config`; no se pudo ejecutar porque el daemon de Docker no estaba activo en la máquina de desarrollo).
+- [x] `docker compose up --build` de punta a punta probado desde cero (MySQL 8.4 + backend + frontend); el frontend de producción funciona en el navegador y llama a la API por el mismo origen (`/clinica/v1`, proxy de nginx), sin depender del puerto del backend.
 
 ---
 
