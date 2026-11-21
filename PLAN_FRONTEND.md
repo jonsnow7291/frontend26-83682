@@ -86,7 +86,8 @@ Visible **solo** para `DESPACHO_MEDICO` (guard + backend).
 ### Fase 6 – Cierre
 - [x] `ng build` en desarrollo y en producción sin errores.
 - [x] Prueba en navegador (Chromium, 4 perfiles) de: login real; menús de `admin`, `secretaria`, `medico1` y `despacho`; `/sin-permiso` al abrir despacho como ADMIN; **carga masiva** (62 filas: vista previa, errores con motivo, confirmación, log); inventario (filtro de utensilios); **fórmula** (cantidad calculada, borrador → confirmar); **despacho** completo; **facturación** (generar, pago parcial → pagada, doble cobro rechazado); calendario mensual del médico; reportes con datos. Sin errores de consola. Capturas en `../docs/evidencias/`.
-- [ ] Prueba en navegador **pendiente** de: atención médica (abrir/finalizar), tarifas, horarios, especialidades, anulación de factura, descuento como ADMIN, reprogramar con solapamiento, nueva cita, descarga de PDF/Excel.
+- [x] También en navegador: **atención médica** (abrir, guardar, finalizar → prefactura PDF), **tarifas** (crear, modificar, historial), **calendario** (nueva cita, solapamiento y fuera de horario rechazados, vistas mes/semana/día, detalle, reprogramar, confirmar, descarga del Excel).
+- [ ] Prueba en navegador **pendiente** de: horarios y especialidades (solo API), anulación de factura, descuento como ADMIN, cancelar cita con motivo, historial de la mascota, descarga de PDF (se verificaron por API).
 - [ ] **Ajuste visual detectado:** en pantalla de 1280 px las tablas de Inventario y Fórmulas son más anchas que su tarjeta y la columna *Acciones* (o la primera) queda recortada hasta hacer scroll horizontal. Reducir columnas o compactar botones.
 - [ ] Revisión responsive en móvil/tablet/escritorio.
 - [ ] Capturas de las 5 evidencias (ver `../PLAN_DOCUMENTACION.md`).
