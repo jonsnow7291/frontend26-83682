@@ -11,7 +11,7 @@
     <div class="card-body table-responsive">
       <div *ngIf="cargando" class="text-center text-muted py-2">Cargando...</div>
       <table class="table table-striped align-middle">
-        <thead class="table-light"><tr><th>#</th><th>Fecha</th><th>Mascota</th><th>Propietario</th><th>Medicamentos</th><th class="text-center">Estado</th><th class="text-center">Despacho</th><th class="text-center">Acciones</th></tr></thead>
+        <thead class="table-light"><tr><th>#</th><th>Fecha</th><th>Mascota</th><th>Propietario</th><th>Medicamentos</th><th class="text-center">Estado</th><th class="text-center d-none d-xxl-table-cell">Despacho</th><th class="text-center">Acciones</th></tr></thead>
         <tbody>
           <tr *ngIf="!cargando && formulas.length === 0"><td colspan="8" class="text-center text-muted">No hay fórmulas registradas</td></tr>
           <tr *ngFor="let f of formulas">
@@ -20,14 +20,15 @@
             <td>{{ f.cita?.mascota?.nombreMascota }}</td>
             <td>{{ f.cita?.cliente?.nombres }} {{ f.cita?.cliente?.apellidos }}</td>
             <td><span *ngFor="let d of f.detalles" class="d-block small">{{ d.medicamento?.nombre }} × {{ d.cantidadPrescrita }}</span></td>
-            <td class="text-center"><span class="badge {{ estadoClase(f) }}">{{ f.estado }}</span></td>
-            <td class="text-center">{{ f.estado === 'BORRADOR' ? '—' : f.estadoDespacho }}</td>
-            <td class="text-center text-nowrap">
-              <button class="btn btn-sm btn-outline-info me-1" (click)="ver(f)">Ver</button>
-              <button class="btn btn-sm btn-outline-secondary me-1" (click)="pdf(f)">PDF</button>
-              <button *ngIf="editable(f)" class="btn btn-sm btn-outline-primary me-1" (click)="editar(f)">Editar</button>
+            <td class="text-center"><span class="badge {{ estadoClase(f) }}">{{ f.estado }}</span>
+              <div class="small text-muted d-xxl-none">{{ f.estado === 'BORRADOR' ? 'Sin despacho' : f.estadoDespacho }}</div></td>
+            <td class="text-center d-none d-xxl-table-cell">{{ f.estado === 'BORRADOR' ? '—' : f.estadoDespacho }}</td>
+            <td class="text-center"><div class="d-flex flex-wrap gap-1 justify-content-center">
+              <button class="btn btn-sm btn-outline-info" (click)="ver(f)">Ver</button>
+              <button class="btn btn-sm btn-outline-secondary" (click)="pdf(f)">PDF</button>
+              <button *ngIf="editable(f)" class="btn btn-sm btn-outline-primary" (click)="editar(f)">Editar</button>
               <button *ngIf="esMedico && f.estado === 'BORRADOR'" class="btn btn-sm btn-success" (click)="confirmar(f)">Confirmar</button>
-            </td>
+            </div></td>
           </tr>
         </tbody>
       </table>
