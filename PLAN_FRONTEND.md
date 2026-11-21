@@ -85,8 +85,9 @@ Visible **solo** para `DESPACHO_MEDICO` (guard + backend).
 
 ### Fase 6 – Cierre
 - [x] `ng build` en desarrollo y en producción sin errores.
-- [x] Prueba en navegador (Chromium) de: login real, menú de `despacho`, `admin` y `medico1`, redirección a `/sin-permiso` al abrir despacho como ADMIN, flujo completo de despacho (preparar → lotes FEFO → entrega → bitácora), calendario mensual del médico y pantalla de reportes. Sin errores de consola.
-- [ ] Prueba en navegador **pendiente** de: carga masiva, fórmulas (borrador → confirmar), atención, facturación y pagos, tarifas, horarios, especialidades, reportes con datos, y los menús de `secretaria`.
+- [x] Prueba en navegador (Chromium, 4 perfiles) de: login real; menús de `admin`, `secretaria`, `medico1` y `despacho`; `/sin-permiso` al abrir despacho como ADMIN; **carga masiva** (62 filas: vista previa, errores con motivo, confirmación, log); inventario (filtro de utensilios); **fórmula** (cantidad calculada, borrador → confirmar); **despacho** completo; **facturación** (generar, pago parcial → pagada, doble cobro rechazado); calendario mensual del médico; reportes con datos. Sin errores de consola. Capturas en `../docs/evidencias/`.
+- [ ] Prueba en navegador **pendiente** de: atención médica (abrir/finalizar), tarifas, horarios, especialidades, anulación de factura, descuento como ADMIN, reprogramar con solapamiento, nueva cita, descarga de PDF/Excel.
+- [ ] **Ajuste visual detectado:** en pantalla de 1280 px las tablas de Inventario y Fórmulas son más anchas que su tarjeta y la columna *Acciones* (o la primera) queda recortada hasta hacer scroll horizontal. Reducir columnas o compactar botones.
 - [ ] Revisión responsive en móvil/tablet/escritorio.
 - [ ] Capturas de las 5 evidencias (ver `../PLAN_DOCUMENTACION.md`).
 - [ ] TsDoc completo (hay en servicios y componentes nuevos; falta repasar los heredados).
