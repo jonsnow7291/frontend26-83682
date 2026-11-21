@@ -108,7 +108,7 @@ export class CitaComponent implements OnInit {
   /**
    * Estados válidos de una cita.
    */
-  readonly estadosPermitidos: string[] = ['Pendiente', 'Programada', 'Confirmada', 'Atendida', 'Cancelada'];
+  readonly estadosPermitidos: string[] = ['PENDIENTE', 'CONFIRMADA', 'ATENDIDA', 'FINALIZADA', 'CANCELADA'];
 
   /**
    * Fecha mínima permitida para agendar (hoy).
@@ -142,7 +142,7 @@ export class CitaComponent implements OnInit {
       medicoId: [null, Validators.required],
       fecha: ['', Validators.required],
       hora: ['', Validators.required],
-      estado: ['Pendiente', Validators.required],
+      estado: ['PENDIENTE', Validators.required],
       motivo: ['', [Validators.maxLength(500)]]
     });
   }
@@ -233,7 +233,7 @@ export class CitaComponent implements OnInit {
     this.titleBoton = 'Agendar Cita';
 
     this.form.reset({
-      estado: 'Pendiente',
+      estado: 'PENDIENTE',
       fecha: this.fechaMinima,
       hora: '09:00'
     });
