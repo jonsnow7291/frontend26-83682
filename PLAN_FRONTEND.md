@@ -85,7 +85,8 @@ Visible **solo** para `DESPACHO_MEDICO` (guard + backend).
 
 ### Fase 6 – Cierre
 - [x] `ng build` en desarrollo y en producción sin errores.
-- [ ] **Prueba en navegador con cada rol** (login → qué ve y qué no → flujo completo). *Pendiente:* el navegador de pruebas automáticas no estaba instalado y no se pudo hacer; hasta ahora lo verificado es la compilación y la API.
+- [x] Prueba en navegador (Chromium) de: login real, menú de `despacho`, `admin` y `medico1`, redirección a `/sin-permiso` al abrir despacho como ADMIN, flujo completo de despacho (preparar → lotes FEFO → entrega → bitácora), calendario mensual del médico y pantalla de reportes. Sin errores de consola.
+- [ ] Prueba en navegador **pendiente** de: carga masiva, fórmulas (borrador → confirmar), atención, facturación y pagos, tarifas, horarios, especialidades, reportes con datos, y los menús de `secretaria`.
 - [ ] Revisión responsive en móvil/tablet/escritorio.
 - [ ] Capturas de las 5 evidencias (ver `../PLAN_DOCUMENTACION.md`).
 - [ ] TsDoc completo (hay en servicios y componentes nuevos; falta repasar los heredados).

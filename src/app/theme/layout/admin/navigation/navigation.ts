@@ -85,7 +85,7 @@ export const NavigationItems: NavigationItem[] = [
         title: 'Tarifas',
         type: 'item',
         url: '/inicio/tarifas',
-        icon: 'feather icon-dollar-sign',
+        icon: 'feather icon-tag',
         classes: 'nav-item',
         roles: ['ADMIN']
       },
