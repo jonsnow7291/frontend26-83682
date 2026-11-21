@@ -1,5 +1,6 @@
 // angular import
 import { Component, inject, output } from '@angular/core';
+import { AuthService } from 'src/app/services/auth.service';
 import { Location } from '@angular/common';
 
 // project import
@@ -16,6 +17,7 @@ import { NavGroupComponent } from './nav-group/nav-group.component';
 })
 export class NavContentComponent {
   private location = inject(Location);
+  private authService = inject(AuthService);
 
   // public method
   // version
@@ -30,7 +32,13 @@ export class NavContentComponent {
 
   // constructor
   constructor() {
-    this.navigations = NavigationItems;
+    // Menú dinámico: cada perfil ve solo los módulos que le corresponden.
+    this.authService.usuario$.subscribe(() => {
+      this.navigations = NavigationItems.map((grupo) => ({
+        ...grupo,
+        children: (grupo.children ?? []).filter((i) => !i.roles?.length || this.authService.tieneRol(i.roles))
+      }));
+    });
   }
 
   fireOutClick() {

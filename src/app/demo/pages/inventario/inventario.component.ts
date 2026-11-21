@@ -4,11 +4,16 @@ import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
 import { Modal } from 'bootstrap';
 
-import { Inventario } from 'src/app/models/inventario';
+import { Inventario, InventarioRq } from 'src/app/models/inventario';
+import { Lote, LoteRq } from 'src/app/models/lote';
+import { MovimientoInventario } from 'src/app/models/movimiento-inventario';
+import { AuthService } from 'src/app/services/auth.service';
 import { InventarioService } from './service/inventario.service';
 
 /**
- * Gestión de inventario de medicamentos y utensilios.
+ * Inventario de medicamentos y utensilios: listado con alertas (agotado, stock bajo, próximo a
+ * vencer, vencido), alta/edición, lotes y entradas, e historial de movimientos.
+ * El perfil DESPACHO_MEDICO lo ve en solo lectura (el backend también lo exige).
  */
 @Component({
   selector: 'app-inventario',
@@ -16,155 +21,197 @@ import { InventarioService } from './service/inventario.service';
   templateUrl: './inventario.component.html'
 })
 export class InventarioComponent {
-  modalInstance: Modal | null = null;
-  titleModal = '';
-  modoFormulario = '';
-  titleBoton = '';
-  formularioValido = true;
+  /** Filtros de alerta disponibles. */
+  readonly filtros = [
+    { valor: 'TODOS', texto: 'Todos' },
+    { valor: 'AGOTADOS', texto: 'Agotados' },
+    { valor: 'STOCK_BAJO', texto: 'Stock bajo' },
+    { valor: 'PROXIMOS_A_VENCER', texto: 'Próximos a vencer' },
+    { valor: 'VENCIDOS', texto: 'Con lotes vencidos' }
+  ];
 
   items: Inventario[] = [];
-  terminoBusqueda = '';
+  cargando = false;
+  filtro = 'TODOS';
+  tipo = '';
+  busqueda = '';
   paginaActual = 1;
   readonly registrosPorPagina = 10;
 
-  form: any = {
-    nombre: '', descripcion: '', presentacion: '', codigo: '', tipo: 'medicamento',
-    registroInvima: '', precioCompra: 0, precioVenta: 0, stockActual: 0, stockMinimo: 0,
-    fechaIngreso: '', fechaProximoPedido: ''
-  };
+  /** Solo ADMIN y SECRETARIA pueden crear/editar (DESPACHO_MEDICO: solo lectura). */
+  readonly puedeEditar: boolean;
 
-  inventarioSeleccionado: Inventario | null = null;
+  form: InventarioRq = this.formVacio();
+  titleModal = '';
+  guardando = false;
+  private modalForm: Modal | null = null;
 
-  constructor(private readonly inventarioService: InventarioService) {
+  seleccionado: Inventario | null = null;
+  lotes: Lote[] = [];
+  movimientos: MovimientoInventario[] = [];
+  entrada: LoteRq = this.entradaVacia();
+  private modalLotes: Modal | null = null;
+  private modalMov: Modal | null = null;
+
+  constructor(private readonly servicio: InventarioService, authService: AuthService) {
+    this.puedeEditar = authService.tieneRol(['ADMIN', 'SECRETARIA']);
     this.listar();
   }
 
+  /** Consulta el inventario con los filtros actuales. */
   listar() {
-    this.inventarioService.listar().subscribe({
-      next: (data) => this.items = data,
-      error: (error) => Swal.fire('Error', error?.error?.message ?? 'No se pudo cargar el inventario', 'error')
+    this.cargando = true;
+    this.servicio.listar(this.filtro, this.tipo, this.busqueda.trim()).subscribe({
+      next: (data) => { this.items = data; this.paginaActual = 1; this.cargando = false; },
+      error: (e) => { this.cargando = false; Swal.fire('Error', e?.error?.message ?? 'No se pudo cargar el inventario', 'error'); }
     });
-  }
-
-  get filtrados(): Inventario[] {
-    const termino = this.normalizarTexto(this.terminoBusqueda.trim());
-    if (!termino) return this.items;
-    return this.items.filter((i) =>
-      this.normalizarTexto(i.nombre).includes(termino) ||
-      this.normalizarTexto(i.codigo).includes(termino)
-    );
   }
 
   get paginados(): Inventario[] {
     const inicio = (this.paginaActual - 1) * this.registrosPorPagina;
-    return this.filtrados.slice(inicio, inicio + this.registrosPorPagina);
+    return this.items.slice(inicio, inicio + this.registrosPorPagina);
   }
 
   get totalPaginas(): number {
-    return Math.ceil(this.filtrados.length / this.registrosPorPagina);
+    return Math.max(1, Math.ceil(this.items.length / this.registrosPorPagina));
   }
 
-  get paginas(): number[] {
-    return Array.from({ length: this.totalPaginas }, (_, i) => i + 1);
+  /** Estado visual del stock de un producto. */
+  estado(i: Inventario): { texto: string; clase: string } {
+    if (!i.activo) { return { texto: 'Inactivo', clase: 'bg-secondary' }; }
+    if ((i.stockActual ?? 0) <= 0) { return { texto: 'Agotado', clase: 'bg-danger' }; }
+    if ((i.stockActual ?? 0) <= (i.stockMinimo ?? 0)) { return { texto: 'Stock bajo', clase: 'bg-warning text-dark' }; }
+    return { texto: 'Disponible', clase: 'bg-success' };
   }
 
-  private normalizarTexto(texto: string): string {
-    return texto.toLocaleLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+  /** Estado del lote según su vencimiento (null = sin vencimiento). */
+  vigencia(l: Lote): { texto: string; clase: string } {
+    if (!l.fechaVencimiento) { return { texto: 'Sin vencimiento', clase: 'bg-secondary' }; }
+    const dias = Math.floor((new Date(l.fechaVencimiento).getTime() - new Date().setHours(0, 0, 0, 0)) / 86400000);
+    if (dias < 0) { return { texto: 'Vencido', clase: 'bg-danger' }; }
+    if (dias <= 30) { return { texto: `Vence en ${dias} d`, clase: 'bg-warning text-dark' }; }
+    return { texto: 'Vigente', clase: 'bg-success' };
   }
 
-  cambiarPagina(pagina: number) {
-    if (pagina >= 1 && pagina <= this.totalPaginas) {
-      this.paginaActual = pagina;
-    }
-  }
-
-  estadoBadge(estado: string): string {
-    switch (estado) {
-      case 'agotado': return 'bg-danger';
-      case 'stock_bajo': return 'bg-warning';
-      case 'proximo_a_vencer': return 'bg-info';
-      case 'vencido': return 'bg-dark';
-      default: return 'bg-success';
-    }
-  }
-
+  // ----- alta / edición -----
   nuevo() {
-    this.inventarioSeleccionado = null;
-    this.formularioValido = true;
+    this.form = this.formVacio();
+    this.titleModal = 'Registrar producto';
+    this.abrir('modalInventario', (m) => this.modalForm = m);
+  }
+
+  editar(i: Inventario) {
     this.form = {
-      nombre: '', descripcion: '', presentacion: '', codigo: '', tipo: 'medicamento',
-      registroInvima: '', precioCompra: 0, precioVenta: 0, stockActual: 0, stockMinimo: 0,
-      fechaIngreso: '', fechaProximoPedido: ''
+      id: i.id, codigo: i.codigo ?? '', nombre: i.nombre ?? '', descripcion: i.descripcion, presentacion: i.presentacion,
+      tipo: i.tipo ?? 'MEDICAMENTO', registroInvima: i.registroInvima, precioCompra: i.precioCompra ?? 0,
+      precioVenta: i.precioVenta ?? 0, ivaPorcentaje: i.ivaPorcentaje ?? 0, stockMinimo: i.stockMinimo ?? 0,
+      fechaProximoPedido: i.fechaProximoPedido ?? null, activo: i.activo
     };
-    this.titleModal = 'Nuevo producto';
-    this.titleBoton = 'Guardar';
-    this.modoFormulario = 'C';
-    this.abrirModal();
-  }
-
-  editar(item: Inventario) {
-    this.inventarioSeleccionado = item;
-    this.form = { ...item };
     this.titleModal = 'Editar producto';
-    this.titleBoton = 'Actualizar';
-    this.modoFormulario = 'E';
-    this.abrirModal();
+    this.abrir('modalInventario', (m) => this.modalForm = m);
   }
 
-  abrirModal() {
-    const el = document.getElementById('modalInventario');
-    if (el) {
-      this.modalInstance ??= new Modal(el);
-      this.modalInstance.show();
-    }
-  }
-
-  cerrarModal() {
-    this.modalInstance?.hide();
-    this.inventarioSeleccionado = null;
+  /** Validación de cliente (el backend vuelve a validar). */
+  errorForm(): string | null {
+    const f = this.form;
+    if (!/^[A-Za-z0-9]{8}$/.test(f.codigo ?? '')) { return 'El código debe tener exactamente 8 caracteres alfanuméricos'; }
+    if (!f.nombre?.trim()) { return 'El nombre es obligatorio'; }
+    if (f.tipo === 'MEDICAMENTO' && !f.registroInvima?.trim()) { return 'El registro Invima es obligatorio para los medicamentos'; }
+    if (f.precioCompra == null || f.precioCompra < 0 || f.precioVenta == null || f.precioVenta < 0) { return 'Los precios no pueden ser negativos'; }
+    if ((f.stockMinimo ?? 0) < 0) { return 'El stock mínimo no puede ser negativo'; }
+    return null;
   }
 
   guardar() {
-    if (!this.form.nombre || !this.form.codigo) {
-      Swal.fire('Atención', 'Nombre y código son obligatorios', 'warning');
-      return;
-    }
-    if (this.form.tipo === 'medicamento' && !this.form.registroInvima) {
-      Swal.fire('Atención', 'El registro Invima es obligatorio para medicamentos', 'warning');
-      return;
-    }
-
-    const peticion = this.modoFormulario === 'E' && this.inventarioSeleccionado
-      ? this.inventarioService.actualizar(this.form)
-      : this.inventarioService.guardar(this.form);
-
+    const error = this.errorForm();
+    if (error) { Swal.fire('Atención', error, 'warning'); return; }
+    this.guardando = true;
+    const rq: InventarioRq = { ...this.form, registroInvima: this.form.tipo === 'MEDICAMENTO' ? this.form.registroInvima : this.form.registroInvima || undefined };
+    const peticion = rq.id ? this.servicio.actualizar(rq) : this.servicio.crear(rq);
     peticion.subscribe({
-      next: (res) => {
-        Swal.fire('Éxito', res.message ?? 'Operación exitosa', 'success');
-        this.cerrarModal();
+      next: () => {
+        this.guardando = false;
+        this.modalForm?.hide();
+        Swal.fire('Éxito', rq.id ? 'Producto actualizado' : 'Producto registrado', 'success');
         this.listar();
       },
-      error: (err) => Swal.fire('Error', err?.error?.message ?? 'No se pudo guardar', 'error')
+      error: (e) => { this.guardando = false; Swal.fire('Error', e?.error?.message ?? 'No se pudo guardar', 'error'); }
     });
   }
 
-  eliminar(item: Inventario) {
-    Swal.fire({
-      title: '¿Eliminar producto?',
-      text: 'Esta acción no se puede deshacer.',
-      icon: 'warning',
-      showCancelButton: true,
-      confirmButtonText: 'Eliminar'
-    }).then((r) => {
-      if (r.isConfirmed) {
-        this.inventarioService.eliminar(item.id!).subscribe({
-          next: (res) => {
-            Swal.fire('Éxito', res.message ?? 'Eliminado', 'success');
-            this.listar();
-          },
-          error: (err) => Swal.fire('Error', err?.error?.message ?? 'No se pudo eliminar', 'error')
+  cambiarEstado(i: Inventario) {
+    const activar = !i.activo;
+    Swal.fire({ title: `${activar ? 'Activar' : 'Inactivar'} "${i.nombre}"?`, icon: 'question', showCancelButton: true, confirmButtonText: 'Sí' })
+      .then((r) => {
+        if (!r.isConfirmed) { return; }
+        this.servicio.cambiarEstado(i.id!, activar).subscribe({
+          next: () => this.listar(),
+          error: (e) => Swal.fire('Error', e?.error?.message ?? 'No se pudo cambiar el estado', 'error')
         });
-      }
+      });
+  }
+
+  // ----- lotes y entradas -----
+  verLotes(i: Inventario) {
+    this.seleccionado = i;
+    this.entrada = this.entradaVacia();
+    this.entrada.medicamentoId = i.id!;
+    this.entrada.precioCompra = i.precioCompra ?? null;
+    this.cargarLotes();
+    this.abrir('modalLotes', (m) => this.modalLotes = m);
+  }
+
+  private cargarLotes() {
+    this.servicio.lotes(this.seleccionado!.id!).subscribe({
+      next: (l) => this.lotes = l,
+      error: (e) => Swal.fire('Error', e?.error?.message ?? 'No se pudieron cargar los lotes', 'error')
     });
+  }
+
+  registrarEntrada() {
+    const e = this.entrada;
+    if (!e.numeroLote?.trim() || !e.cantidad || e.cantidad <= 0 || !e.fechaCompra) {
+      Swal.fire('Atención', 'Número de lote, cantidad (> 0) y fecha de compra son obligatorios', 'warning'); return;
+    }
+    if (this.seleccionado?.tipo === 'MEDICAMENTO' && !e.fechaVencimiento) {
+      Swal.fire('Atención', 'La fecha de vencimiento es obligatoria para los medicamentos', 'warning'); return;
+    }
+    if (e.fechaVencimiento && e.fechaVencimiento <= e.fechaCompra) {
+      Swal.fire('Atención', 'El vencimiento debe ser posterior a la fecha de compra', 'warning'); return;
+    }
+    this.servicio.registrarEntrada({ ...e, fechaVencimiento: e.fechaVencimiento || null }).subscribe({
+      next: () => {
+        Swal.fire('Éxito', 'Entrada registrada', 'success');
+        this.entrada = this.entradaVacia();
+        this.entrada.medicamentoId = this.seleccionado!.id!;
+        this.cargarLotes();
+        this.listar();
+      },
+      error: (er) => Swal.fire('Error', er?.error?.message ?? 'No se pudo registrar la entrada', 'error')
+    });
+  }
+
+  // ----- movimientos -----
+  verMovimientos(i: Inventario) {
+    this.seleccionado = i;
+    this.movimientos = [];
+    this.servicio.movimientos(i.id).subscribe({
+      next: (m) => this.movimientos = m,
+      error: (e) => Swal.fire('Error', e?.error?.message ?? 'No se pudo cargar el historial', 'error')
+    });
+    this.abrir('modalMovimientos', (m) => this.modalMov = m);
+  }
+
+  private abrir(id: string, guardar: (m: Modal) => void) {
+    const el = document.getElementById(id);
+    if (el) { const m = new Modal(el); guardar(m); m.show(); }
+  }
+
+  private formVacio(): InventarioRq {
+    return { codigo: '', nombre: '', descripcion: '', presentacion: '', tipo: 'MEDICAMENTO', registroInvima: '', precioCompra: 0, precioVenta: 0, ivaPorcentaje: 0, stockMinimo: 0, fechaProximoPedido: null };
+  }
+
+  private entradaVacia(): LoteRq {
+    return { medicamentoId: 0, numeroLote: '', cantidad: 0, precioCompra: null, fechaCompra: new Date().toISOString().substring(0, 10), fechaVencimiento: null };
   }
 }

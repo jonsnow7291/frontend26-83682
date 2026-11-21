@@ -1,251 +1,100 @@
 <div class="container-fluid">
-    <div class="card mb-3">
-        <div class="card-header">
-            <div class="row g-2 align-items-end">
-                <div class="col-md-4">
-                    <label class="form-label mb-0" for="buscarFormula">Buscar</label>
-                    <input id="buscarFormula" type="text" class="form-control"
-                        placeholder="Mascota, cliente, medicamento o veterinario"
-                        [ngModel]="tabla.terminoBusqueda" (ngModelChange)="tabla.buscar($event)" />
-                </div>
-                <div class="col-md-auto ms-auto">
-                    <button class="btn btn-primary" type="button" (click)="nuevaFormula()">
-                        <i class="fa fa-plus" aria-hidden="true"></i>&nbsp; Nueva fórmula
-                    </button>
-                </div>
-            </div>
-        </div>
-        <div class="card-body">
-            <div class="table-responsive">
-                <table class="table table-striped table-hover align-middle">
-                    <thead>
-                        <tr>
-                            <th class="text-center" role="button" (click)="tabla.ordenarPor('id')">
-                                Fórmula <i class="fa" [ngClass]="tabla.iconoOrden('id')"></i>
-                            </th>
-                            <th role="button" (click)="tabla.ordenarPor('mascota')">
-                                Mascota <i class="fa" [ngClass]="tabla.iconoOrden('mascota')"></i>
-                            </th>
-                            <th role="button" (click)="tabla.ordenarPor('cliente')">
-                                Cliente <i class="fa" [ngClass]="tabla.iconoOrden('cliente')"></i>
-                            </th>
-                            <th role="button" (click)="tabla.ordenarPor('medicamento')">
-                                Medicamento <i class="fa" [ngClass]="tabla.iconoOrden('medicamento')"></i>
-                            </th>
-                            <th role="button" (click)="tabla.ordenarPor('medico')">
-                                Veterinario <i class="fa" [ngClass]="tabla.iconoOrden('medico')"></i>
-                            </th>
-                            <th class="text-center" role="button" (click)="tabla.ordenarPor('fechaEmision')">
-                                Emisión <i class="fa" [ngClass]="tabla.iconoOrden('fechaEmision')"></i>
-                            </th>
-                            <th class="text-center" role="button" (click)="tabla.ordenarPor('fechaCreacion')">
-                                Creación <i class="fa" [ngClass]="tabla.iconoOrden('fechaCreacion')"></i>
-                            </th>
-                            <th class="text-center">Acciones</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        <tr *ngIf="cargando">
-                            <td colspan="8" class="text-center py-4">
-                                <span class="spinner-border spinner-border-sm me-2" aria-hidden="true"></span>
-                                Cargando fórmulas...
-                            </td>
-                        </tr>
-                        <tr *ngIf="!cargando && tabla.filtrados.length === 0">
-                            <td colspan="8" class="text-center">
-                                {{ tabla.totalRegistros === 0 ? 'No hay fórmulas registradas' : 'No se encontraron resultados' }}
-                            </td>
-                        </tr>
-                        <ng-container *ngIf="!cargando">
-                            <tr *ngFor="let formula of tabla.paginados">
-                                <td class="text-center">{{ formula.id }}</td>
-                                <td>{{ formula.cita?.mascota?.nombreMascota }}</td>
-                                <td>{{ formula.cita?.cliente?.nombres }} {{ formula.cita?.cliente?.apellidos }}</td>
-                                <td>{{ formula.medicamento?.nombre }}</td>
-                                <td>{{ formula.cita?.medico?.nombres }} {{ formula.cita?.medico?.apellidos }}</td>
-                                <td class="text-center">{{ formula.fechaEmision | date:'yyyy-MM-dd HH:mm' }}</td>
-                                <td class="text-center">{{ formula.fechaCreacionRegistro | date:'yyyy-MM-dd HH:mm' }}</td>
-                                <td class="text-center text-nowrap">
-                                    <button class="btn btn-sm btn-outline-info me-1" (click)="verDetalle(formula)">
-                                        Ver
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-primary" (click)="abrirEdicion(formula)">
-                                        Editar
-                                    </button>
-                                </td>
-                            </tr>
-                        </ng-container>
-                    </tbody>
-                </table>
-            </div>
-            <app-paginador [tabla]="tabla"></app-paginador>
-        </div>
+  <div class="alert alert-info py-2">
+    <strong>Recuerde:</strong> formular no descuenta inventario. La fórmula nace en <em>borrador</em>; el médico la confirma y el
+    <strong>despachador</strong> entrega los medicamentos, momento en que se descuenta el stock.
+  </div>
+  <div class="card">
+    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <h5 class="mb-0">Fórmulas médicas <span *ngIf="citaFiltro" class="badge bg-primary ms-2">Cita #{{ citaFiltro }} <a href="javascript:void(0)" class="text-white ms-1" (click)="quitarFiltro()">✕</a></span></h5>
+      <button class="btn btn-primary" (click)="nueva()">Nueva fórmula</button>
     </div>
-</div>
+    <div class="card-body table-responsive">
+      <div *ngIf="cargando" class="text-center text-muted py-2">Cargando...</div>
+      <table class="table table-striped align-middle">
+        <thead class="table-light"><tr><th>#</th><th>Fecha</th><th>Mascota</th><th>Propietario</th><th>Medicamentos</th><th class="text-center">Estado</th><th class="text-center">Despacho</th><th class="text-center">Acciones</th></tr></thead>
+        <tbody>
+          <tr *ngIf="!cargando && formulas.length === 0"><td colspan="8" class="text-center text-muted">No hay fórmulas registradas</td></tr>
+          <tr *ngFor="let f of formulas">
+            <td>{{ f.id }}</td>
+            <td>{{ f.fechaEmision | date:'yyyy-MM-dd HH:mm' }}</td>
+            <td>{{ f.cita?.mascota?.nombreMascota }}</td>
+            <td>{{ f.cita?.cliente?.nombres }} {{ f.cita?.cliente?.apellidos }}</td>
+            <td><span *ngFor="let d of f.detalles" class="d-block small">{{ d.medicamento?.nombre }} × {{ d.cantidadPrescrita }}</span></td>
+            <td class="text-center"><span class="badge {{ estadoClase(f) }}">{{ f.estado }}</span></td>
+            <td class="text-center">{{ f.estado === 'BORRADOR' ? '—' : f.estadoDespacho }}</td>
+            <td class="text-center text-nowrap">
+              <button class="btn btn-sm btn-outline-info me-1" (click)="ver(f)">Ver</button>
+              <button class="btn btn-sm btn-outline-secondary me-1" (click)="pdf(f)">PDF</button>
+              <button *ngIf="editable(f)" class="btn btn-sm btn-outline-primary me-1" (click)="editar(f)">Editar</button>
+              <button *ngIf="esMedico && f.estado === 'BORRADOR'" class="btn btn-sm btn-success" (click)="confirmar(f)">Confirmar</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 
-<!-- Modal formulario -->
-<div class="modal fade" id="modalFormula" tabindex="-1" aria-labelledby="modalFormulaLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5" id="modalFormulaLabel">{{ titleModal }}</h1>
-                <button type="button" class="btn-close" aria-label="Close" (click)="cerrarModal()"></button>
-            </div>
-            <div class="modal-body">
-                <form [formGroup]="form" (ngSubmit)="guardar()">
-                    <div class="row">
-                        <div class="col-md-6 mb-3">
-                            <label for="clienteId" class="form-label">Cliente</label>
-                            <select id="clienteId" class="form-select" formControlName="clienteId"
-                                (change)="onClienteChange(form.value.clienteId)"
-                                [class.is-invalid]="f['clienteId'].touched && f['clienteId'].invalid">
-                                <option [ngValue]="null" disabled>Seleccione un cliente</option>
-                                <option *ngFor="let cliente of clientes" [ngValue]="cliente.clienteId">
-                                    {{ cliente.nombres }} {{ cliente.apellidos }}
-                                </option>
-                            </select>
-                            <div class="invalid-feedback">Seleccione un cliente.</div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="mascotaId" class="form-label">Mascota</label>
-                            <select id="mascotaId" class="form-select" formControlName="mascotaId"
-                                (change)="onMascotaChange(form.value.mascotaId)"
-                                [class.is-invalid]="f['mascotaId'].touched && f['mascotaId'].invalid">
-                                <option [ngValue]="null" disabled>{{ cargandoMascotas ? 'Cargando...' : 'Seleccione una mascota' }}</option>
-                                <option *ngFor="let mascota of mascotas" [ngValue]="mascota.mascotaId">
-                                    {{ mascota.nombreMascota }}
-                                </option>
-                            </select>
-                            <div class="invalid-feedback">Seleccione una mascota.</div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="citaId" class="form-label">Cita atendida</label>
-                            <select id="citaId" class="form-select" formControlName="citaId"
-                                [class.is-invalid]="f['citaId'].touched && f['citaId'].invalid">
-                                <option [ngValue]="null" disabled>{{ cargandoCitas ? 'Cargando...' : 'Seleccione una cita' }}</option>
-                                <option *ngFor="let cita of citas" [ngValue]="cita.id">
-                                    #{{ cita.id }} - {{ cita.fechaHora | date:'yyyy-MM-dd HH:mm' }}
-                                </option>
-                            </select>
-                            <div class="invalid-feedback">Seleccione una cita atendida.</div>
-                            <div class="form-text" *ngIf="form.value.mascotaId && !cargandoCitas && citas.length === 0">
-                                La mascota no tiene citas atendidas.
-                            </div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label class="form-label">Veterinario</label>
-                            <input type="text" class="form-control" disabled
-                                [value]="citaSeleccionada ? (citaSeleccionada.medico?.nombres + ' ' + citaSeleccionada.medico?.apellidos) : ''" />
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="medicamentoId" class="form-label">Medicamento</label>
-                            <select id="medicamentoId" class="form-select" formControlName="medicamentoId"
-                                [class.is-invalid]="f['medicamentoId'].touched && f['medicamentoId'].invalid">
-                                <option [ngValue]="null" disabled>Seleccione un medicamento</option>
-                                <option *ngFor="let medicamento of medicamentos" [ngValue]="medicamento.id">
-                                    {{ medicamento.nombre }} - {{ medicamento.presentacion }}
-                                </option>
-                            </select>
-                            <div class="invalid-feedback">Seleccione un medicamento.</div>
-                        </div>
-                        <div class="col-md-6 mb-3">
-                            <label for="fechaEmision" class="form-label">Fecha de emisión (opcional)</label>
-                            <input id="fechaEmision" type="datetime-local" class="form-control" formControlName="fechaEmision" />
-                            <div class="form-text">Si se deja vacía se usa la fecha y hora actual.</div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="dosis" class="form-label">Dosis</label>
-                            <input id="dosis" type="text" class="form-control" formControlName="dosis" placeholder="Ej. 5 ml"
-                                [class.is-invalid]="f['dosis'].touched && f['dosis'].invalid" />
-                            <div class="invalid-feedback">Ingrese la dosis.</div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="frecuencia" class="form-label">Frecuencia</label>
-                            <input id="frecuencia" type="text" class="form-control" formControlName="frecuencia"
-                                placeholder="Ej. Cada 8 horas"
-                                [class.is-invalid]="f['frecuencia'].touched && f['frecuencia'].invalid" />
-                            <div class="invalid-feedback">Ingrese la frecuencia (máx. 100 caracteres).</div>
-                        </div>
-                        <div class="col-md-4 mb-3">
-                            <label for="duracionDias" class="form-label">Duración (días)</label>
-                            <input id="duracionDias" type="number" min="1" [max]="duracionMaximaDias" class="form-control"
-                                formControlName="duracionDias"
-                                [class.is-invalid]="f['duracionDias'].touched && f['duracionDias'].invalid" />
-                            <div class="invalid-feedback">La duración debe estar entre 1 y {{ duracionMaximaDias }} días.</div>
-                        </div>
-                        <div class="col-12 mb-3">
-                            <label for="indicaciones" class="form-label">Indicaciones</label>
-                            <textarea id="indicaciones" rows="3" class="form-control" formControlName="indicaciones"></textarea>
-                        </div>
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" (click)="cerrarModal()">Cerrar</button>
-                <button type="button" class="btn btn-primary" [disabled]="guardando" (click)="guardar()">
-                    <span *ngIf="guardando" class="spinner-border spinner-border-sm me-1" aria-hidden="true"></span>
-                    {{ titleBoton }}
-                </button>
-            </div>
+  <!-- Formulario -->
+  <div class="modal fade" id="modalFormula" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-xl"><div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">{{ titleModal }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <div class="row g-3 mb-3">
+          <ng-container *ngIf="!citaFija">
+            <div class="col-md-4"><label class="form-label">Propietario *</label>
+              <select class="form-select" [(ngModel)]="clienteId" (change)="alCambiarCliente()"><option [ngValue]="null">Seleccione...</option><option *ngFor="let c of clientes" [ngValue]="c.clienteId">{{ c.nombres }} {{ c.apellidos }}</option></select></div>
+            <div class="col-md-4"><label class="form-label">Mascota *</label>
+              <select class="form-select" [(ngModel)]="mascotaId" (change)="alCambiarMascota()" [disabled]="!clienteId"><option [ngValue]="null">Seleccione...</option><option *ngFor="let m of mascotas" [ngValue]="m.mascotaId">{{ m.nombreMascota }}</option></select></div>
+            <div class="col-md-4"><label class="form-label">Cita atendida *</label>
+              <select class="form-select" [(ngModel)]="citaId" [disabled]="!mascotaId"><option [ngValue]="null">Seleccione...</option><option *ngFor="let c of citas" [ngValue]="c.id">#{{ c.id }} · {{ c.fechaHora | date:'yyyy-MM-dd HH:mm' }}</option></select></div>
+          </ng-container>
+          <div class="col-12" *ngIf="citaFija"><strong>Cita #{{ citaFija.id }}:</strong> {{ citaFija.mascota?.nombreMascota }} — {{ citaFija.cliente?.nombres }} {{ citaFija.cliente?.apellidos }} · {{ citaFija.fechaHora | date:'yyyy-MM-dd HH:mm' }}</div>
         </div>
-    </div>
-</div>
 
-<!-- Modal detalle -->
-<div class="modal fade" id="modalDetalleFormula" tabindex="-1" aria-labelledby="modalDetalleFormulaLabel" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h1 class="modal-title fs-5" id="modalDetalleFormulaLabel">
-                    Fórmula médica #{{ formulaVer?.id }}
-                </h1>
-                <button type="button" class="btn-close" aria-label="Close" (click)="cerrarDetalle()"></button>
-            </div>
-            <div class="modal-body" *ngIf="formulaVer">
-                <h6 class="text-muted">Paciente y consulta</h6>
-                <dl class="row">
-                    <dt class="col-sm-4">Cliente</dt>
-                    <dd class="col-sm-8">{{ formulaVer.cita?.cliente?.nombres }} {{ formulaVer.cita?.cliente?.apellidos }}</dd>
-                    <dt class="col-sm-4">Mascota</dt>
-                    <dd class="col-sm-8">{{ formulaVer.cita?.mascota?.nombreMascota }}</dd>
-                    <dt class="col-sm-4">Cita</dt>
-                    <dd class="col-sm-8">#{{ formulaVer.cita?.id }} - {{ formulaVer.cita?.fechaHora | date:'yyyy-MM-dd HH:mm' }}</dd>
-                    <dt class="col-sm-4">Motivo</dt>
-                    <dd class="col-sm-8">{{ formulaVer.cita?.motivo || '—' }}</dd>
-                    <dt class="col-sm-4">Veterinario</dt>
-                    <dd class="col-sm-8">
-                        {{ formulaVer.cita?.medico?.nombres }} {{ formulaVer.cita?.medico?.apellidos }}
-                        <span class="text-muted">(Reg. {{ formulaVer.cita?.medico?.registroProfesional }})</span>
-                    </dd>
-                </dl>
-                <h6 class="text-muted">Prescripción</h6>
-                <dl class="row">
-                    <dt class="col-sm-4">Medicamento</dt>
-                    <dd class="col-sm-8">{{ formulaVer.medicamento?.nombre }} - {{ formulaVer.medicamento?.presentacion }}</dd>
-                    <dt class="col-sm-4">Vence</dt>
-                    <dd class="col-sm-8">{{ formulaVer.medicamento?.fechaVence | date:'yyyy-MM-dd' }}</dd>
-                    <dt class="col-sm-4">Dosis</dt>
-                    <dd class="col-sm-8">{{ formulaVer.dosis }}</dd>
-                    <dt class="col-sm-4">Frecuencia</dt>
-                    <dd class="col-sm-8">{{ formulaVer.frecuencia }}</dd>
-                    <dt class="col-sm-4">Duración</dt>
-                    <dd class="col-sm-8">{{ formulaVer.duracionDias }} días</dd>
-                    <dt class="col-sm-4">Indicaciones</dt>
-                    <dd class="col-sm-8">{{ formulaVer.indicaciones || '—' }}</dd>
-                </dl>
-                <h6 class="text-muted">Registro</h6>
-                <dl class="row mb-0">
-                    <dt class="col-sm-4">Emitida</dt>
-                    <dd class="col-sm-8">{{ formulaVer.fechaEmision | date:'yyyy-MM-dd HH:mm' }}</dd>
-                    <dt class="col-sm-4">Creada</dt>
-                    <dd class="col-sm-8">{{ formulaVer.fechaCreacionRegistro | date:'yyyy-MM-dd HH:mm' }}</dd>
-                    <dt class="col-sm-4">Última actualización</dt>
-                    <dd class="col-sm-8">{{ (formulaVer.fechaActualizacionRegistro | date:'yyyy-MM-dd HH:mm') || '—' }}</dd>
-                </dl>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" (click)="cerrarDetalle()">Cerrar</button>
-            </div>
+        <h6>Medicamentos</h6>
+        <div class="border rounded p-2 mb-2" *ngFor="let l of lineas; let i = index">
+          <div class="row g-2 align-items-end">
+            <div class="col-md-4"><label class="small text-muted">Medicamento *</label>
+              <select class="form-select" [(ngModel)]="l.medicamentoId"><option [ngValue]="null">Seleccione...</option><option *ngFor="let m of medicamentos" [ngValue]="m.id">{{ m.nombre }} (stock {{ m.stockActual }})</option></select>
+              <small *ngIf="medicamento(l.medicamentoId) as m" [ngClass]="m.stockActual! >= cantidadFinal(l) ? 'text-success' : 'text-danger'">
+                Disponibilidad: {{ m.stockActual }} u. {{ m.stockActual! >= cantidadFinal(l) ? '✓' : '— no alcanza hoy (se podrá despachar parcial)' }}</small></div>
+            <div class="col-md-3"><label class="small text-muted">Dosis *</label><input class="form-control" placeholder="Ej.: 1 tableta" [(ngModel)]="l.dosis"></div>
+            <div class="col-md-3"><label class="small text-muted">Frecuencia *</label><input class="form-control" placeholder="Ej.: cada 8 horas" [(ngModel)]="l.frecuencia"></div>
+            <div class="col-md-2"><label class="small text-muted">Duración (días) *</label><input type="number" min="1" class="form-control" [(ngModel)]="l.duracionDias"></div>
+            <div class="col-md-2"><label class="small text-muted">Unidades por toma</label><input type="number" min="1" class="form-control" [(ngModel)]="l.unidadesPorDosis"></div>
+            <div class="col-md-2"><label class="small text-muted">Tomas por día</label><input type="number" min="1" class="form-control" [(ngModel)]="l.dosisPorDia"></div>
+            <div class="col-md-2"><label class="small text-muted">Cantidad {{ cantidadCalculada(l) ? '(calculada)' : '*' }}</label>
+              <input type="number" min="1" class="form-control" [ngModel]="cantidadCalculada(l) ?? l.cantidadPrescrita" (ngModelChange)="l.cantidadPrescrita = $event" [disabled]="!!cantidadCalculada(l)"></div>
+            <div class="col-md-2"><label class="small text-muted">Vía</label><input class="form-control" [(ngModel)]="l.viaAdministracion"></div>
+            <div class="col-md-3"><label class="small text-muted">Indicaciones especiales</label><input class="form-control" [(ngModel)]="l.indicaciones"></div>
+            <div class="col-md-1 text-end"><button class="btn btn-outline-danger" (click)="quitarLinea(i)" [disabled]="lineas.length === 1" title="Quitar">✕</button></div>
+          </div>
         </div>
-    </div>
+        <button class="btn btn-outline-primary btn-sm" (click)="agregarLinea()">+ Agregar medicamento</button>
+        <div class="mt-3"><label class="form-label">Indicaciones generales</label><textarea class="form-control" rows="2" [(ngModel)]="indicaciones"></textarea></div>
+      </div>
+      <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-primary" [disabled]="guardando" (click)="guardar()">Guardar borrador</button></div>
+    </div></div>
+  </div>
+
+  <!-- Detalle -->
+  <div class="modal fade" id="modalDetalleFormula" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg"><div class="modal-content" *ngIf="detalle">
+      <div class="modal-header"><h5 class="modal-title">Fórmula #{{ detalle.id }} <span class="badge {{ estadoClase(detalle) }} ms-2">{{ detalle.estado }}</span></h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <p class="mb-1"><strong>Mascota:</strong> {{ detalle.cita?.mascota?.nombreMascota }} · <strong>Propietario:</strong> {{ detalle.cita?.cliente?.nombres }} {{ detalle.cita?.cliente?.apellidos }}</p>
+        <p class="mb-3"><strong>Veterinario:</strong> {{ detalle.cita?.medico?.nombres }} {{ detalle.cita?.medico?.apellidos }} · <strong>Cita:</strong> #{{ detalle.cita?.id }}</p>
+        <table class="table table-sm table-bordered">
+          <thead><tr><th>Medicamento</th><th>Dosis</th><th>Frecuencia</th><th>Duración</th><th class="text-end">Cantidad</th><th>Vía</th><th class="text-center">Disponible</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let d of detalle.detalles">
+              <td>{{ d.medicamento?.nombre }}<div class="small text-muted">{{ d.indicaciones }}</div></td><td>{{ d.dosis }}</td><td>{{ d.frecuencia }}</td><td>{{ d.duracionDias }} d</td><td class="text-end">{{ d.cantidadPrescrita }}</td><td>{{ d.viaAdministracion }}</td>
+              <td class="text-center"><span *ngIf="disponible(d.medicamento?.id) as x" class="badge" [ngClass]="x.disponible ? 'bg-success' : 'bg-danger'">{{ x.stockVigente }} u.</span></td>
+            </tr>
+          </tbody>
+        </table>
+        <p *ngIf="detalle.indicaciones" class="mb-0"><strong>Indicaciones:</strong> {{ detalle.indicaciones }}</p>
+      </div>
+    </div></div>
+  </div>
 </div>

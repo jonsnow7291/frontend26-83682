@@ -1,19 +1,40 @@
 /**
- * Modelo de un producto del inventario (medicamento o utensilio).
+ * Medicamento o producto médico del inventario (respuesta de `/medicamento`).
  */
 export interface Inventario {
     id?: number;
+    codigo?: string;
+    nombre?: string;
+    descripcion?: string;
+    presentacion?: string;
+    /** MEDICAMENTO (exige registro Invima) o UTENSILIO. */
+    tipo?: string;
+    registroInvima?: string;
+    precioCompra?: number;
+    precioVenta?: number;
+    ivaPorcentaje?: number;
+    stockActual?: number;
+    stockMinimo?: number;
+    fechaIngreso?: string;
+    fechaProximoPedido?: string;
+    activo?: boolean;
+}
+
+/**
+ * Datos enviados para crear o editar un medicamento/producto (`MedicamentoRq`).
+ */
+export interface InventarioRq {
+    id?: number;
+    codigo: string;
     nombre: string;
     descripcion?: string;
     presentacion?: string;
-    codigo: string; // 8 caracteres
-    tipo: 'medicamento' | 'utensilio';
-    registroInvima?: string; // Obligatorio si es medicamento
+    tipo: string;
+    registroInvima?: string;
     precioCompra: number;
     precioVenta: number;
-    stockActual: number;
-    stockMinimo: number;
-    fechaIngreso?: Date;
-    fechaProximoPedido?: Date;
-    estado?: 'disponible' | 'stock_bajo' | 'agotado' | 'proximo_a_vencer' | 'vencido';
+    ivaPorcentaje?: number;
+    stockMinimo?: number;
+    fechaProximoPedido?: string | null;
+    activo?: boolean;
 }

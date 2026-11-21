@@ -1,12 +1,15 @@
 /**
- * Movimiento de inventario (entrada o salida).
+ * Movimiento de inventario (ENTRADA o SALIDA) con su trazabilidad.
  */
 export interface MovimientoInventario {
     id?: number;
-    inventarioId?: number;
-    tipo: 'entrada' | 'salida';
-    cantidad: number;
-    fecha: Date;
+    medicamentoId?: number;
+    loteId?: number;
+    tipo?: string;
+    cantidad?: number;
+    fecha?: string;
+    usuarioId?: number;
+    formulaMedicaId?: number;
+    despachoId?: number;
     motivo?: string;
-    usuario?: string;
 }

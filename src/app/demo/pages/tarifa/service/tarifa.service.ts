@@ -1,36 +1,45 @@
 import { Injectable } from '@angular/core';
+import { HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Tarifa } from 'src/app/models/tarifa';
-import { Respuesta } from 'src/app/models/respuesta';
+import { Tarifa, TarifaLog, TarifaRq } from 'src/app/models/tarifa';
 import { BackendService } from 'src/app/services/backend.service';
 import { environment } from 'src/environments/environment';
 
+/**
+ * Acceso a los endpoints de tarifas (`/tarifa`). Escritura solo ADMIN (lo exige el backend).
+ */
 @Injectable({
   providedIn: 'root'
 })
 export class TarifaService {
-  private api = 'tarifa';
+  private readonly api = 'tarifa';
 
-  constructor(private backendService: BackendService) { }
+  constructor(private readonly backendService: BackendService) { }
 
-  listar(): Observable<Tarifa[]> {
-    return this.backendService.get(environment.apiUrlAuth, this.api, 'listar');
+  /** Lista tarifas. @param especializacionId filtro opcional. @param todas incluir inactivas. */
+  listar(especializacionId?: number | null, todas = false): Observable<Tarifa[]> {
+    let params = new HttpParams().set('todas', todas);
+    if (especializacionId) { params = params.set('especializacionId', especializacionId); }
+    return this.backendService.get(environment.apiUrlAuth, this.api, 'listar', params);
   }
 
-  guardar(tarifa: Tarifa): Observable<Respuesta> {
-    return this.backendService.post(environment.apiUrlAuth, this.api, 'guardar', tarifa);
+  /** Crea una tarifa. */
+  crear(rq: TarifaRq): Observable<Tarifa> {
+    return this.backendService.post(environment.apiUrlAuth, this.api, 'guardar', rq);
   }
 
-  actualizar(tarifa: Tarifa): Observable<Respuesta> {
-    return this.backendService.post(environment.apiUrlAuth, this.api, 'actualizar', tarifa);
+  /** Modifica una tarifa (queda registrada en el log; no altera facturas emitidas). */
+  actualizar(rq: TarifaRq): Observable<Tarifa> {
+    return this.backendService.put(environment.apiUrlAuth, this.api, 'actualizar', rq);
   }
 
-  activarInactivar(id: number, activo: boolean): Observable<Respuesta> {
-    const params = new URLSearchParams({ id: id.toString(), activo: activo.toString() });
-    return this.backendService.post(environment.apiUrlAuth, this.api, 'activar-inactivar?' + params.toString());
+  /** Activa o inactiva una tarifa. */
+  cambiarEstado(id: number, activa: boolean): Observable<Tarifa> {
+    return this.backendService.patch(environment.apiUrlAuth, this.api, 'estado', null, new HttpParams().set('id', id).set('activa', activa));
   }
 
-  listarLogCambios(): Observable<any[]> {
-    return this.backendService.get(environment.apiUrlAuth, this.api, 'log-cambios');
+  /** Historial de cambios de una tarifa. */
+  historial(id: number): Observable<TarifaLog[]> {
+    return this.backendService.get(environment.apiUrlAuth, this.api, 'historial', new HttpParams().set('id', id));
   }
 }

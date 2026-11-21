@@ -1,55 +1,51 @@
 import { Injectable } from '@angular/core';
 import { HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { FormulaMedica } from 'src/app/models/formula-medica';
-import { FormulaMedicaRq } from 'src/app/models/formula-medica-rq';
+import { DisponibilidadFormula, FormulaMedica, FormulaMedicaRq } from 'src/app/models/formula-medica';
 import { Respuesta } from 'src/app/models/respuesta';
 import { BackendService } from 'src/app/services/backend.service';
 import { environment } from 'src/environments/environment';
 
 /**
- * Servicio de acceso a los endpoints de fórmulas médicas (`/formula-medica`).
+ * Servicio de fórmulas médicas (`/formula-medica`).
  */
 @Injectable({
   providedIn: 'root'
 })
 export class FormulaMedicaService {
-  /**
-   * Ruta base del recurso en el backend.
-   */
-  private api = `formula-medica`;
+  private readonly api = `formula-medica`;
 
-  constructor(private backendService: BackendService) { }
+  constructor(private readonly backendService: BackendService) { }
 
-  /**
-   * Lista todas las fórmulas médicas, de la más reciente a la más antigua.
-   */
-  listarFormulas(): Observable<FormulaMedica[]> {
-    return this.backendService.get(environment.apiUrlAuth, this.api, "listar");
+  /** Lista fórmulas, opcionalmente de una cita. */
+  listarFormulas(citaId?: number | null): Observable<FormulaMedica[]> {
+    let params = new HttpParams();
+    if (citaId) { params = params.set('citaId', citaId); }
+    return this.backendService.get(environment.apiUrlAuth, this.api, 'listar', params);
   }
 
-  /**
-   * Consulta el detalle completo de una fórmula médica.
-   * @param formulaId identificador de la fórmula.
-   */
-  consultarFormula(formulaId: number): Observable<FormulaMedica> {
-    const params = new HttpParams().set('formulaId', formulaId);
-    return this.backendService.get(environment.apiUrlAuth, this.api, "consultar", params);
+  /** Crea una fórmula en BORRADOR (no toca inventario). */
+  guardarFormula(rq: FormulaMedicaRq): Observable<Respuesta> {
+    return this.backendService.post(environment.apiUrlAuth, this.api, 'guardar', rq);
   }
 
-  /**
-   * Registra una nueva fórmula médica.
-   * @param formula datos de la fórmula a registrar.
-   */
-  guardarFormula(formula: FormulaMedicaRq): Observable<Respuesta> {
-    return this.backendService.post(environment.apiUrlAuth, this.api, "guardar", formula);
+  /** Edita una fórmula mientras sea BORRADOR o su despacho siga pendiente. */
+  actualizarFormula(rq: FormulaMedicaRq): Observable<Respuesta> {
+    return this.backendService.put(environment.apiUrlAuth, this.api, 'actualizar', rq);
   }
 
-  /**
-   * Actualiza una fórmula médica existente.
-   * @param formula datos actualizados de la fórmula (incluye `formulaId`).
-   */
-  actualizarFormula(formula: FormulaMedicaRq): Observable<Respuesta> {
-    return this.backendService.put(environment.apiUrlAuth, this.api, "actualizar", formula);
+  /** Confirma la fórmula (solo el médico): desde ahí queda disponible para despacho. */
+  confirmar(id: number): Observable<Respuesta> {
+    return this.backendService.post(environment.apiUrlAuth, this.api, `${id}/confirmar`, null);
+  }
+
+  /** Disponibilidad en inventario de cada medicamento de la fórmula. */
+  disponibilidad(id: number): Observable<DisponibilidadFormula[]> {
+    return this.backendService.get(environment.apiUrlAuth, this.api, `${id}/disponibilidad`);
+  }
+
+  /** Fórmula en PDF. */
+  pdf(id: number): Observable<Blob> {
+    return this.backendService.getBlob(environment.apiUrlAuth, this.api, `${id}/pdf`);
   }
 }

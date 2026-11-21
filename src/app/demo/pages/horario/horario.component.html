@@ -1,0 +1,46 @@
+<div class="container-fluid">
+  <div class="card">
+    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <h5 class="mb-0">Horarios de disponibilidad de veterinarios</h5>
+      <div class="d-flex gap-2">
+        <select class="form-select" [(ngModel)]="medicoId" (change)="listar()">
+          <option [ngValue]="null">Seleccione un veterinario...</option>
+          <option *ngFor="let m of medicos" [ngValue]="m.id">{{ m.nombres }} {{ m.apellidos }}</option>
+        </select>
+        <button class="btn btn-primary text-nowrap" [disabled]="!medicoId" (click)="nuevo()">Nueva franja</button>
+      </div>
+    </div>
+    <div class="card-body table-responsive">
+      <div *ngIf="cargando" class="text-center text-muted py-2">Cargando...</div>
+      <p *ngIf="!medicoId" class="text-muted mb-0">Seleccione un veterinario para ver y editar su disponibilidad.</p>
+      <table class="table table-striped align-middle" *ngIf="medicoId">
+        <thead class="table-light"><tr><th>Día</th><th>Desde</th><th>Hasta</th><th class="text-center">Activo</th><th class="text-center">Acciones</th></tr></thead>
+        <tbody>
+          <tr *ngIf="!cargando && horarios.length === 0"><td colspan="5" class="text-center text-muted">Sin franjas: no se podrán programar citas para este veterinario</td></tr>
+          <tr *ngFor="let h of horarios">
+            <td>{{ dias[h.diaSemana || 0] }}</td><td>{{ h.horaInicio?.substring(0, 5) }}</td><td>{{ h.horaFin?.substring(0, 5) }}</td>
+            <td class="text-center"><span class="badge" [ngClass]="h.activo ? 'bg-success' : 'bg-secondary'">{{ h.activo ? 'Sí' : 'No' }}</span></td>
+            <td class="text-center text-nowrap">
+              <button class="btn btn-sm btn-outline-primary me-1" (click)="editar(h)">Editar</button>
+              <button class="btn btn-sm btn-outline-danger" (click)="eliminar(h)">Eliminar</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalHorario" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog"><div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">{{ form.id ? 'Editar franja' : 'Nueva franja' }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body"><div class="row g-3">
+        <div class="col-12"><label class="form-label">Día *</label>
+          <select class="form-select" [(ngModel)]="form.diaSemana"><option *ngFor="let d of [1,2,3,4,5,6,7]" [ngValue]="d">{{ dias[d] }}</option></select></div>
+        <div class="col-md-6"><label class="form-label">Desde *</label><input type="time" class="form-control" [(ngModel)]="form.horaInicio"></div>
+        <div class="col-md-6"><label class="form-label">Hasta *</label><input type="time" class="form-control" [(ngModel)]="form.horaFin"></div>
+        <div class="col-12 form-check ms-2"><input type="checkbox" class="form-check-input" id="horarioActivo" [(ngModel)]="form.activo"><label class="form-check-label" for="horarioActivo">Franja activa</label></div>
+      </div></div>
+      <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-primary" (click)="guardar()">Guardar</button></div>
+    </div></div>
+  </div>
+</div>

@@ -1,55 +1,66 @@
 <div class="container-fluid">
-    <div class="card mb-4">
-        <div class="card-header">
-            <h5>Carga masiva de inventario</h5>
+  <div class="card mb-4">
+    <div class="card-header"><h5 class="mb-0">Carga masiva de inventario</h5></div>
+    <div class="card-body">
+      <p class="text-muted mb-2">1) Descargue la plantilla · 2) Seleccione su archivo .xlsx o .csv · 3) Revise la vista previa · 4) Confirme.</p>
+      <div class="row g-3 align-items-center">
+        <div class="col-md-4">
+          <div class="btn-group w-100">
+            <button class="btn btn-outline-primary" (click)="descargarPlantilla('xlsx')">Plantilla .xlsx</button>
+            <button class="btn btn-outline-primary" (click)="descargarPlantilla('csv')">Plantilla .csv</button>
+          </div>
         </div>
-        <div class="card-body">
-            <div class="row g-3">
-                <div class="col-md-4">
-                    <button class="btn btn-outline-primary w-100" (click)="descargarPlantilla()">
-                        <i class="fa fa-download" aria-hidden="true"></i> Descargar plantilla
-                    </button>
-                </div>
-                <div class="col-md-6">
-                    <input type="file" class="form-control" accept=".xlsx,.csv" (change)="onFileChange($event)" />
-                </div>
-                <div class="col-md-2">
-                    <button class="btn btn-primary w-100" (click)="previsualizar()" [disabled]="cargando || !archivo">
-                        {{ cargando ? 'Procesando...' : 'Previsualizar' }}
-                    </button>
-                </div>
-            </div>
-        </div>
+        <div class="col-md-6"><input type="file" class="form-control" accept=".xlsx,.csv" (change)="onFileChange($event)"></div>
+        <div class="col-md-2"><button class="btn btn-primary w-100" (click)="previsualizar()" [disabled]="cargando || !archivo">{{ cargando ? 'Procesando...' : 'Previsualizar' }}</button></div>
+      </div>
     </div>
+  </div>
 
-    <div *ngIf="preview" class="card">
-        <div class="card-header">
-            <h5>Previsualización de carga</h5>
-        </div>
-        <div class="card-body">
-            <div class="row mb-3">
-                <div class="col-md-6"><strong>Filas válidas:</strong> {{ preview.filasValidas?.length }}</div>
-                <div class="col-md-6"><strong>Filas con error:</strong> {{ preview.filasConError?.length }}</div>
-            </div>
-            <div class="table-responsive mb-3">
-                <table class="table table-sm table-striped">
-                    <thead><tr><th>#</th><th>Nombre</th><th>Código</th><th>Estado</th><th>Motivo</th></tr></thead>
-                    <tbody>
-                        <tr *ngFor="let fila of preview.filasValidas; let i = index">
-                            <td>{{ i + 1 }}</td><td>{{ fila.nombre }}</td><td>{{ fila.codigo }}</td>
-                            <td><span class="badge bg-success">Válida</span></td><td>-</td>
-                        </tr>
-                        <tr *ngFor="let fila of preview.filasConError; let i = index">
-                            <td>{{ i + 1 }}</td><td>{{ fila.nombre }}</td><td>{{ fila.codigo }}</td>
-                            <td><span class="badge bg-danger">Error</span></td><td>{{ fila.motivo }}</td>
-                        </tr>
-                    </tbody>
-                </table>
-            </div>
-            <div class="d-flex gap-2">
-                <button class="btn btn-success" (click)="confirmar()" [disabled]="!preview.filasValidas?.length">Confirmar importación</button>
-                <button class="btn btn-outline-danger" (click)="descargarInformeErrores()">Descargar informe de errores</button>
-            </div>
-        </div>
+  <div class="card mb-4" *ngIf="vista">
+    <div class="card-header d-flex justify-content-between align-items-center">
+      <h5 class="mb-0">Vista previa — {{ vista.archivo }}</h5>
+      <button class="btn btn-success" (click)="confirmar()" [disabled]="cargando || vista.validas === 0">Confirmar importación de {{ vista.validas }} válidos</button>
     </div>
+    <div class="card-body">
+      <div class="mb-3">
+        <span class="badge bg-secondary me-2">Total: {{ vista.totalFilas }}</span>
+        <span class="badge bg-success me-2">Válidas: {{ vista.validas }}</span>
+        <span class="badge bg-danger">Con error: {{ vista.rechazadas }}</span>
+      </div>
+      <div class="table-responsive" style="max-height: 420px; overflow-y: auto;">
+        <table class="table table-sm table-bordered">
+          <thead class="table-light"><tr><th>Fila</th><th>Código</th><th>Nombre</th><th>Resultado</th><th>Motivo del rechazo</th></tr></thead>
+          <tbody>
+            <tr *ngFor="let f of vista.filas" [ngClass]="f.valida ? '' : 'table-danger'">
+              <td>{{ f.fila }}</td><td>{{ f.codigo }}</td><td>{{ f.nombre }}</td>
+              <td><span class="badge" [ngClass]="f.valida ? 'bg-success' : 'bg-danger'">{{ f.valida ? 'Válida' : 'Error' }}</span></td>
+              <td><span *ngFor="let e of f.errores" class="d-block">{{ e }}</span></td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div class="alert alert-success d-flex justify-content-between align-items-center" *ngIf="resultado">
+    <span>Carga #{{ resultado.cargaId }} finalizada: {{ resultado.validas }} importados, {{ resultado.rechazadas }} rechazados.</span>
+    <button *ngIf="resultado.rechazadas > 0" class="btn btn-sm btn-outline-dark" (click)="descargarErrores(resultado.cargaId)">Descargar informe de errores</button>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><h5 class="mb-0">Log de cargas</h5></div>
+    <div class="card-body table-responsive">
+      <table class="table table-sm table-striped">
+        <thead class="table-light"><tr><th>#</th><th>Archivo</th><th>Fecha</th><th>Usuario</th><th class="text-end">Total</th><th class="text-end">Válidas</th><th class="text-end">Rechazadas</th><th></th></tr></thead>
+        <tbody>
+          <tr *ngIf="historial.length === 0"><td colspan="8" class="text-center text-muted">Aún no hay cargas</td></tr>
+          <tr *ngFor="let h of historial">
+            <td>{{ h.id }}</td><td>{{ h.nombreArchivo }}</td><td>{{ h.fecha | date:'yyyy-MM-dd HH:mm' }}</td><td>{{ h.usuarioId }}</td>
+            <td class="text-end">{{ h.totalFilas }}</td><td class="text-end">{{ h.filasValidas }}</td><td class="text-end">{{ h.filasRechazadas }}</td>
+            <td><button *ngIf="h.filasRechazadas > 0" class="btn btn-sm btn-outline-secondary" (click)="descargarErrores(h.id)">Errores</button></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
 </div>

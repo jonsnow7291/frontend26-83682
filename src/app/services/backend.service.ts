@@ -165,6 +165,30 @@ export class BackendService {
   }
 
   /**
+   * Realiza una petición GET que devuelve un archivo (PDF, Excel, CSV).
+   * @param urlApi   URL base del backend.
+   * @param endpoint recurso.
+   * @param service  operación (puede incluir segmentos de ruta, ej. `5/pdf`).
+   * @param routerParams parámetros de consulta (opcional).
+   */
+  getBlob(
+    urlApi: string,
+    endpoint: string,
+    service: string,
+    routerParams?: HttpParams
+  ): Observable<Blob> {
+    const tokenRecuperado = localStorage.getItem('token') || '';
+    const headers = new HttpHeaders({
+      Authorization: tokenRecuperado ? `Bearer ${tokenRecuperado}` : '',
+    });
+    return this.http.get(`${urlApi}/${endpoint}/${service}`, {
+      params: routerParams,
+      headers: headers,
+      responseType: 'blob',
+    });
+  }
+
+  /**
    * Realiza una petición POST con archivos (multipart).
    * @param urlApi   URL base del backend.
    * @param endpoint recurso.

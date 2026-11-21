@@ -1,12 +1,13 @@
 import { Injectable } from '@angular/core';
-import { Observable, of, BehaviorSubject } from 'rxjs';
+import { Observable, BehaviorSubject } from 'rxjs';
+import { map } from 'rxjs/operators';
+import { HttpClient } from '@angular/common/http';
 import { UsuarioAuth } from '../models/usuario-auth';
 import { environment } from '../../environments/environment';
 
 /**
  * Servicio de autenticación y sesión de usuario.
  * Gestiona el token, el rol y el estado de inicio de sesión.
- * Mientras el backend no publique el endpoint de login, se usa un mock local.
  */
 @Injectable({
   providedIn: 'root'
@@ -19,7 +20,7 @@ export class AuthService {
   private usuarioSubject = new BehaviorSubject<UsuarioAuth | null>(this.obtenerUsuarioGuardado());
   readonly usuario$ = this.usuarioSubject.asObservable();
 
-  constructor() { }
+  constructor(private readonly http: HttpClient) { }
 
   /**
    * Guarda el token y los datos del usuario en localStorage y actualiza el subject.
@@ -85,34 +86,15 @@ export class AuthService {
   }
 
   /**
-   * Mock de login (pendiente de endpoint real del backend).
-   * Credenciales de prueba:
-   * - admin / admin123 -> ADMIN
-   * - secretaria / sec123 -> SECRETARIA
-   * - medico / med123 -> MEDICO
-   * - despacho / desp123 -> DESPACHO_MEDICO
+   * Inicia sesión contra el backend (`POST /auth/login`) y devuelve los datos de sesión.
+   * Credenciales de prueba por rol: ver la documentación técnica (contraseña de prueba, no real).
    * @param username usuario.
    * @param password contraseña.
    */
-  mockLogin(username: string, password: string): Observable<UsuarioAuth> {
-    const credenciales: Record<string, UsuarioAuth> = {
-      'admin': { id: 1, username: 'admin', rol: 'ADMIN', token: 'mock-token-admin' },
-      'secretaria': { id: 2, username: 'secretaria', rol: 'SECRETARIA', token: 'mock-token-secretaria' },
-      'medico': { id: 3, username: 'medico', rol: 'MEDICO', token: 'mock-token-medico' },
-      'despacho': { id: 4, username: 'despacho', rol: 'DESPACHO_MEDICO', token: 'mock-token-despacho' }
-    };
-
-    const clave = username.toLowerCase();
-    const encontrado = credenciales[clave];
-
-    if (encontrado && password.length > 0) {
-      return of(encontrado);
-    }
-
-    // Devuelve un observable con error para que el componente lo capture.
-    return new Observable<UsuarioAuth>(observer => {
-      observer.error({ status: 401, error: { message: 'Usuario o contraseña incorrectos' } });
-    });
+  iniciarSesion(username: string, password: string): Observable<UsuarioAuth> {
+    return this.http
+      .post<{ token: string; usuario: UsuarioAuth }>(`${environment.apiUrlAuth}/auth/login`, { username, password })
+      .pipe(map((rs) => ({ ...rs.usuario, token: rs.token })));
   }
 
   /**

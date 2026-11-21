@@ -1,45 +1,44 @@
 import { Injectable } from '@angular/core';
 import { HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Factura } from 'src/app/models/factura';
-import { Respuesta } from 'src/app/models/respuesta';
+import { FacturaRs } from 'src/app/models/factura';
 import { BackendService } from 'src/app/services/backend.service';
 import { environment } from 'src/environments/environment';
 
+/**
+ * Acceso a facturación (`/factura`) y pagos (`/pago`).
+ */
 @Injectable({
   providedIn: 'root'
 })
 export class FacturaService {
-  private api = 'factura';
+  constructor(private readonly backendService: BackendService) { }
 
-  constructor(private backendService: BackendService) { }
-
-  listar(): Observable<Factura[]> {
-    return this.backendService.get(environment.apiUrlAuth, this.api, 'listar');
+  /** Facturas, opcionalmente por propietario o por mascota (historial de facturación). */
+  listar(clienteId?: number | null, mascotaId?: number | null): Observable<FacturaRs[]> {
+    let params = new HttpParams();
+    if (clienteId) { params = params.set('clienteId', clienteId); }
+    if (mascotaId) { params = params.set('mascotaId', mascotaId); }
+    return this.backendService.get(environment.apiUrlAuth, 'factura', 'listar', params);
   }
 
-  obtener(id: number): Observable<Factura> {
-    const params = new HttpParams().set('id', id);
-    return this.backendService.get(environment.apiUrlAuth, this.api, 'consultar', params);
+  /** Genera la factura de una cita atendida (descuento solo ADMIN). */
+  generar(citaId: number, descuento: number | null): Observable<FacturaRs> {
+    return this.backendService.post(environment.apiUrlAuth, 'factura', 'generar', { citaId, descuento });
   }
 
-  generarDesdeAtencion(atencionId: number): Observable<Respuesta> {
-    const params = new HttpParams().set('atencionId', atencionId);
-    return this.backendService.post(environment.apiUrlAuth, this.api, 'generar', null, params);
+  /** Anula la factura con motivo (no se borra; exige que no tenga pagos). */
+  anular(id: number, motivo: string): Observable<FacturaRs> {
+    return this.backendService.patch(environment.apiUrlAuth, 'factura', 'anular', null, new HttpParams().set('id', id).set('motivo', motivo));
   }
 
-  registrarPago(facturaId: number, monto: number): Observable<Respuesta> {
-    const body = { facturaId, monto };
-    return this.backendService.post(environment.apiUrlAuth, this.api, 'pago', body);
+  /** Registra un pago parcial o total. */
+  registrarPago(facturaId: number, valor: number, metodo: string, referencia: string | null): Observable<FacturaRs> {
+    return this.backendService.post(environment.apiUrlAuth, 'pago', 'registrar', { facturaId, valor, metodo, referencia });
   }
 
-  anular(facturaId: number, motivo: string): Observable<Respuesta> {
-    const body = { facturaId, motivo };
-    return this.backendService.post(environment.apiUrlAuth, this.api, 'anular', body);
-  }
-
-  descargarPDF(facturaId: number): Observable<Blob> {
-    const params = new HttpParams().set('id', facturaId);
-    return this.backendService.get(environment.apiUrlAuth, this.api, 'pdf', params);
+  /** Factura en PDF. */
+  pdf(id: number): Observable<Blob> {
+    return this.backendService.getBlob(environment.apiUrlAuth, 'factura', `${id}/pdf`);
   }
 }

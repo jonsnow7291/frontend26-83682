@@ -8,7 +8,7 @@
                 <div class="mb-3">
                     <label class="form-label">Usuario</label>
                     <input type="text" class="form-control" [(ngModel)]="username" name="username"
-                        placeholder="admin, secretaria, medico, despacho" required />
+                        placeholder="admin, secretaria, medico1, despacho" required />
                 </div>
                 <div class="mb-3">
                     <label class="form-label">Contraseña</label>
@@ -16,11 +16,9 @@
                         placeholder="••••••••" required />
                 </div>
                 <div class="text-muted small mb-3">
-                    Credenciales de prueba:<br>
-                    admin / admin123 (ADMIN)<br>
-                    secretaria / sec123 (SECRETARIA)<br>
-                    medico / med123 (MEDICO)<br>
-                    despacho / desp123 (DESPACHO_MEDICO)
+                    Usuarios de prueba (contraseña de prueba <code>Clinica2026*</code>):<br>
+                    admin (ADMIN) · secretaria (SECRETARIA)<br>
+                    medico1 / medico2 (MEDICO) · despacho (DESPACHO_MEDICO)
                 </div>
                 <button type="submit" class="btn btn-primary w-100" [disabled]="cargando">
                     {{ cargando ? 'Ingresando...' : 'Ingresar' }}

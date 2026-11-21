@@ -1,44 +1,43 @@
 import { Injectable } from '@angular/core';
 import { HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { AtencionMedica } from 'src/app/models/atencion-medica';
-import { Respuesta } from 'src/app/models/respuesta';
+import { AtencionMedica, AtencionRq } from 'src/app/models/atencion-medica';
 import { BackendService } from 'src/app/services/backend.service';
 import { environment } from 'src/environments/environment';
 
+/**
+ * Acceso a los endpoints de atención médica (`/atencion`).
+ */
 @Injectable({
   providedIn: 'root'
 })
 export class AtencionMedicaService {
-  private api = 'atencion-medica';
+  private readonly api = 'atencion';
 
-  constructor(private backendService: BackendService) { }
+  constructor(private readonly backendService: BackendService) { }
 
-  listarPorCita(citaId: number): Observable<AtencionMedica[]> {
-    const params = new HttpParams().set('citaId', citaId);
-    return this.backendService.get(environment.apiUrlAuth, this.api, 'listar-por-cita', params);
+  /** Abre la atención de una cita (la cita pasa a ATENDIDA). */
+  abrir(rq: AtencionRq): Observable<AtencionMedica> {
+    return this.backendService.post(environment.apiUrlAuth, this.api, 'abrir', rq);
   }
 
-  obtener(id: number): Observable<AtencionMedica> {
-    const params = new HttpParams().set('id', id);
-    return this.backendService.get(environment.apiUrlAuth, this.api, 'consultar', params);
+  /** Guarda motivo, síntomas, diagnóstico, observaciones y recomendaciones. */
+  registrar(rq: AtencionRq): Observable<AtencionMedica> {
+    return this.backendService.put(environment.apiUrlAuth, this.api, 'registrar', rq);
   }
 
-  guardar(atencion: AtencionMedica): Observable<Respuesta> {
-    return this.backendService.post(environment.apiUrlAuth, this.api, 'guardar', atencion);
+  /** Finaliza la atención (exige diagnóstico) y la deja en el historial clínico. */
+  finalizar(id: number): Observable<AtencionMedica> {
+    return this.backendService.patch(environment.apiUrlAuth, this.api, 'finalizar', null, new HttpParams().set('id', id));
   }
 
-  actualizar(atencion: AtencionMedica): Observable<Respuesta> {
-    return this.backendService.post(environment.apiUrlAuth, this.api, 'actualizar', atencion);
+  /** Atenciones (antecedentes médicos) de una mascota. */
+  historialMascota(mascotaId: number): Observable<AtencionMedica[]> {
+    return this.backendService.get(environment.apiUrlAuth, this.api, 'historial-mascota', new HttpParams().set('mascotaId', mascotaId));
   }
 
-  finalizar(id: number): Observable<Respuesta> {
-    const params = new HttpParams().set('id', id);
-    return this.backendService.post(environment.apiUrlAuth, this.api, 'finalizar', null, params);
-  }
-
-  generarPrefacturaPDF(id: number): Observable<Blob> {
-    const params = new HttpParams().set('id', id);
-    return this.backendService.get(environment.apiUrlAuth, this.api, 'prefactura-pdf', params);
+  /** Prefactura en PDF (servicios prestados y medicamentos formulados). */
+  prefacturaPdf(id: number): Observable<Blob> {
+    return this.backendService.getBlob(environment.apiUrlAuth, this.api, `${id}/prefactura-pdf`);
   }
 }

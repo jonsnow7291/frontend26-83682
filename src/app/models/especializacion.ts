@@ -10,4 +10,6 @@ export class Especializacion {
     descripcion?: string;
     /** Código interno de la especialización. */
     codigoEspecializacion?: string;
+    /** Las especialidades inactivas no admiten nuevas citas ni tarifas nuevas. */
+    activa?: boolean;
 }

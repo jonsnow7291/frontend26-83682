@@ -6,7 +6,6 @@ import { AuthService } from 'src/app/services/auth.service';
 
 /**
  * Pantalla de inicio de sesión (layout guest).
- * Mientras no exista el endpoint real de login en el backend, usa un mock.
  */
 @Component({
   selector: 'app-login',
@@ -31,7 +30,7 @@ export class LoginComponent {
     }
 
     this.cargando = true;
-    this.authService.mockLogin(this.username, this.password).subscribe({
+    this.authService.iniciarSesion(this.username, this.password).subscribe({
       next: (usuario) => {
         this.authService.login(usuario);
         this.cargando = false;
@@ -40,7 +39,7 @@ export class LoginComponent {
       },
       error: (error) => {
         this.cargando = false;
-        const mensaje = error?.error?.message ?? 'Usuario o contraseña incorrectos';
+        const mensaje = error?.status === 0 ? 'No se pudo conectar con el servidor' : (error?.error?.message ?? 'Usuario o contraseña incorrectos');
         Swal.fire('Error', mensaje, 'error');
       }
     });

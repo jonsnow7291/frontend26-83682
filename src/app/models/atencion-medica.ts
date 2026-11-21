@@ -1,17 +1,30 @@
 /**
- * Atención médica de una cita.
+ * Atención médica abierta desde una cita (respuesta de `/atencion`).
+ * Estado: EN_CURSO o FINALIZADA.
  */
 export interface AtencionMedica {
     id?: number;
     citaId?: number;
-    mascotaNombre?: string;
-    clienteNombre?: string;
-    antecedentes?: string;
+    medicoId?: number;
+    tarifaId?: number;
     motivo?: string;
     sintomas?: string;
     diagnostico?: string;
     observaciones?: string;
     recomendaciones?: string;
-    fechaAtencion?: Date;
-    finalizada?: boolean;
+    estado?: string;
+    fechaInicio?: string;
+    fechaFin?: string;
+}
+
+/** Datos para abrir o registrar una atención (`AtencionRq`). */
+export interface AtencionRq {
+    id?: number;
+    citaId: number;
+    tarifaId?: number | null;
+    motivo?: string;
+    sintomas?: string;
+    diagnostico?: string;
+    observaciones?: string;
+    recomendaciones?: string;
 }

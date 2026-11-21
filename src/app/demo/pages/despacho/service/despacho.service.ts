@@ -1,44 +1,71 @@
 import { Injectable } from '@angular/core';
 import { HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
-import { Despacho } from 'src/app/models/despacho';
-import { Respuesta } from 'src/app/models/respuesta';
+import { DespachoDetalle, DespachoResumen, EstadoLog, MovimientoDespacho, SugerenciaDespacho } from 'src/app/models/despacho';
 import { BackendService } from 'src/app/services/backend.service';
 import { environment } from 'src/environments/environment';
 
+/**
+ * Acceso a los endpoints de despacho (`/despacho`), exclusivos del perfil DESPACHO_MEDICO.
+ */
 @Injectable({
   providedIn: 'root'
 })
 export class DespachoService {
-  private api = 'despacho';
+  private readonly api = 'despacho';
 
-  constructor(private backendService: BackendService) { }
+  constructor(private readonly backendService: BackendService) { }
 
-  listarPendientes(): Observable<Despacho[]> {
-    return this.backendService.get(environment.apiUrlAuth, this.api, 'pendientes');
+  /** Fórmulas pendientes de despacho. @param q id, propietario o mascota. @param fecha aaaa-mm-dd. */
+  pendientes(q?: string, fecha?: string): Observable<DespachoResumen[]> {
+    let params = new HttpParams();
+    if (q) { params = params.set('q', q); }
+    if (fecha) { params = params.set('fecha', fecha); }
+    return this.backendService.get(environment.apiUrlAuth, this.api, 'pendientes', params);
   }
 
-  obtener(id: number): Observable<Despacho> {
-    const params = new HttpParams().set('id', id);
-    return this.backendService.get(environment.apiUrlAuth, this.api, 'consultar', params);
+  /** Detalle del despacho de una fórmula (existencias, lotes, alertas). @param formulaId fórmula. */
+  detallePorFormula(formulaId: number): Observable<DespachoDetalle> {
+    return this.backendService.get(environment.apiUrlAuth, this.api, `formula/${formulaId}`);
   }
 
-  confirmarEntrega(despachoId: number, detalles: any[]): Observable<Respuesta> {
-    const body = { despachoId, detalles };
-    return this.backendService.post(environment.apiUrlAuth, this.api, 'confirmar', body);
+  /** Pasa a EN_PREPARACION y sugiere lotes FEFO. @param id despacho. */
+  preparar(id: number): Observable<SugerenciaDespacho> {
+    return this.backendService.post(environment.apiUrlAuth, this.api, `${id}/preparar`, null);
   }
 
-  cancelar(despachoId: number, motivo: string): Observable<Respuesta> {
-    const body = { despachoId, motivo };
-    return this.backendService.post(environment.apiUrlAuth, this.api, 'cancelar', body);
+  /** Confirma la entrega (transaccional, descuenta inventario). Sin líneas entrega lo sugerido/disponible. */
+  confirmar(id: number, lineas: { detalleId: number; cantidad: number }[] | null, observaciones: string): Observable<DespachoDetalle> {
+    return this.backendService.post(environment.apiUrlAuth, this.api, `${id}/confirmar`, lineas ? { lineas, observaciones } : null);
   }
 
-  descargarComprobantePDF(despachoId: number): Observable<Blob> {
-    const params = new HttpParams().set('id', despachoId);
-    return this.backendService.get(environment.apiUrlAuth, this.api, 'comprobante-pdf', params);
+  /** Cancela el despacho con autorización de un ADMIN. */
+  cancelar(id: number, motivo: string, autorizadorUsername: string, autorizadorPassword: string): Observable<DespachoResumen> {
+    return this.backendService.post(environment.apiUrlAuth, this.api, `${id}/cancelar`, { motivo, autorizadorUsername, autorizadorPassword });
   }
 
-  listarHistorial(): Observable<any[]> {
+  /** Reversa un despacho confirmado (devuelve stock) con autorización de un ADMIN. */
+  reversar(id: number, motivo: string, autorizadorUsername: string, autorizadorPassword: string): Observable<DespachoResumen> {
+    return this.backendService.post(environment.apiUrlAuth, this.api, `${id}/reversar`, { motivo, autorizadorUsername, autorizadorPassword });
+  }
+
+  /** Comprobante de despacho en PDF. */
+  comprobante(id: number): Observable<Blob> {
+    return this.backendService.getBlob(environment.apiUrlAuth, this.api, `${id}/comprobante-pdf`);
+  }
+
+  /** Historial de despachos. */
+  historial(): Observable<DespachoResumen[]> {
     return this.backendService.get(environment.apiUrlAuth, this.api, 'historial');
+  }
+
+  /** Salidas de un medicamento y su relación con despachos. */
+  historialMedicamento(medicamentoId: number): Observable<MovimientoDespacho[]> {
+    return this.backendService.get(environment.apiUrlAuth, this.api, 'historial-medicamento', new HttpParams().set('medicamentoId', medicamentoId));
+  }
+
+  /** Historial de cambios de estado de un despacho. */
+  estados(id: number): Observable<EstadoLog[]> {
+    return this.backendService.get(environment.apiUrlAuth, this.api, `${id}/estados`);
   }
 }

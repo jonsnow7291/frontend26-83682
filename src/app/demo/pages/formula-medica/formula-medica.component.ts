@@ -1,357 +1,214 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
-import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl } from '@angular/forms';
-import { finalize } from 'rxjs';
+import { FormsModule } from '@angular/forms';
+import { ActivatedRoute } from '@angular/router';
 import Swal from 'sweetalert2';
 import { Modal } from 'bootstrap';
 
-import { FormulaMedica } from 'src/app/models/formula-medica';
-import { FormulaMedicaRq } from 'src/app/models/formula-medica-rq';
+import { DisponibilidadFormula, FormulaLineaRq, FormulaMedica, FormulaMedicaRq } from 'src/app/models/formula-medica';
+import { Inventario } from 'src/app/models/inventario';
 import { Cliente } from 'src/app/models/cliente';
 import { Mascota } from 'src/app/models/mascota';
 import { Cita } from 'src/app/models/cita';
-import { Medicamento } from 'src/app/models/medicamento';
+import { AuthService } from 'src/app/services/auth.service';
 import { FormulaMedicaService } from './service/formula-medica.service';
+import { InventarioService } from '../inventario/service/inventario.service';
 import { ClienteService } from '../cliente/service/cliente.service';
 import { MascotaService } from '../mascota/service/mascota.service';
 import { CitaService } from '../cita/service/cita.service';
-import { MedicamentoService } from '../medicamento/service/medicamento.service';
-import { PaginadorComponent } from 'src/app/demo/shared/paginador/paginador.component';
-import { TablaDatos, tiempo, nombreCompleto, mensajeError } from 'src/app/utils/tabla-datos';
+import { CalendarioService } from '../calendario/service/calendario.service';
+import { abrirPdf } from 'src/app/utils/descarga';
 
 /**
- * Componente de gestión de fórmulas médicas.
- * Permite listar (con filtros, ordenamiento y paginación), crear, editar y ver el
- * detalle completo de una prescripción. No permite eliminar: una fórmula emitida
- * hace parte del historial clínico.
+ * Fórmulas médicas con varios medicamentos. El médico las crea (borrador), consulta la
+ * disponibilidad y las confirma; solo entonces pasan a despacho. Formular NO descuenta inventario:
+ * el descuento ocurre cuando el despacho confirma la entrega.
  */
 @Component({
   selector: 'app-formula-medica',
-  imports: [CommonModule, FormsModule, ReactiveFormsModule, PaginadorComponent],
+  imports: [CommonModule, FormsModule],
   templateUrl: './formula-medica.component.html'
 })
 export class FormulaMedicaComponent {
-  /** Duración máxima del tratamiento en días (igual a la validada en el backend). */
-  readonly duracionMaximaDias = 365;
-
-  /** Instancia del modal del formulario. */
-  modalFormulario: Modal | null = null;
-  /** Instancia del modal de detalle. */
-  modalDetalle: Modal | null = null;
-
-  /** Título del modal del formulario. */
-  titleModal = '';
-  /** Texto del botón de guardar. */
-  titleBoton = '';
-  /** Formulario reactivo de la fórmula. */
-  form!: FormGroup;
-  /** Fórmula en edición (`null` al crear). */
-  formulaSeleccionada: FormulaMedica | null = null;
-  /** Fórmula mostrada en el modal de detalle. */
-  formulaVer: FormulaMedica | null = null;
-
-  /** Indica que se está cargando el listado. */
+  formulas: FormulaMedica[] = [];
   cargando = false;
-  /** Indica que se está guardando el formulario. */
-  guardando = false;
-  /** Indica que se están cargando las mascotas del cliente. */
-  cargandoMascotas = false;
-  /** Indica que se están cargando las citas de la mascota. */
-  cargandoCitas = false;
+  citaFiltro: number | null = null;
+  readonly esMedico: boolean;
 
-  /** DataTable con búsqueda, ordenamiento (inicial: más recientes primero) y paginación. */
-  tabla = new TablaDatos<FormulaMedica>(
-    {
-      id: (f) => f.id,
-      mascota: (f) => f.cita?.mascota?.nombreMascota?.toLowerCase(),
-      cliente: (f) => nombreCompleto(f.cita?.cliente),
-      medicamento: (f) => f.medicamento?.nombre?.toLowerCase(),
-      medico: (f) => nombreCompleto(f.cita?.medico),
-      fechaEmision: (f) => tiempo(f.fechaEmision),
-      fechaCreacion: (f) => tiempo(f.fechaCreacionRegistro)
-    },
-    (f) => [
-      f.id,
-      f.cita?.mascota?.nombreMascota,
-      f.cita?.cliente?.nombres,
-      f.cita?.cliente?.apellidos,
-      f.medicamento?.nombre,
-      f.cita?.medico?.nombres,
-      f.cita?.medico?.apellidos
-    ],
-    'fechaCreacion'
-  );
-
-  /** Catálogo de clientes (primer combo dependiente). */
+  // formulario
+  titleModal = '';
+  formulaId: number | undefined;
   clientes: Cliente[] = [];
-  /** Mascotas del cliente seleccionado. */
   mascotas: Mascota[] = [];
-  /** Citas atendidas de la mascota seleccionada. */
   citas: Cita[] = [];
-  /** Catálogo de medicamentos. */
-  medicamentos: Medicamento[] = [];
+  clienteId: number | null = null;
+  mascotaId: number | null = null;
+  citaId: number | null = null;
+  citaFija: Cita | null = null;
+  indicaciones = '';
+  lineas: FormulaLineaRq[] = [];
+  medicamentos: Inventario[] = [];
+  guardando = false;
+  private modalForm: Modal | null = null;
+
+  // detalle
+  detalle: FormulaMedica | null = null;
+  disponibilidad: DisponibilidadFormula[] = [];
+  private modalDetalle: Modal | null = null;
 
   constructor(
-    private readonly formulaService: FormulaMedicaService,
+    private readonly servicio: FormulaMedicaService,
+    private readonly inventario: InventarioService,
     private readonly clienteService: ClienteService,
     private readonly mascotaService: MascotaService,
     private readonly citaService: CitaService,
-    private readonly medicamentoService: MedicamentoService,
-    private readonly formBuilder: FormBuilder
+    private readonly calendario: CalendarioService,
+    authService: AuthService,
+    ruta: ActivatedRoute
   ) {
-    this.inicializarFormulario();
-    this.cargarCatalogos();
-    this.listar();
-  }
-
-  /**
-   * Inicializa el formulario reactivo con sus validaciones.
-   */
-  inicializarFormulario() {
-    this.form = this.formBuilder.group({
-      clienteId: [null, Validators.required],
-      mascotaId: [null, Validators.required],
-      citaId: [null, Validators.required],
-      medicamentoId: [null, Validators.required],
-      dosis: ['', [Validators.required, Validators.maxLength(255)]],
-      frecuencia: ['', [Validators.required, Validators.maxLength(100)]],
-      duracionDias: [null, [Validators.required, Validators.min(1), Validators.max(this.duracionMaximaDias)]],
-      indicaciones: [''],
-      fechaEmision: ['']
+    this.esMedico = authService.tieneRol(['MEDICO']);
+    this.inventario.listar('TODOS', 'MEDICAMENTO').subscribe({ next: (m) => this.medicamentos = m.filter((x) => x.activo), error: () => this.medicamentos = [] });
+    this.clienteService.listarClientes().subscribe({ next: (c) => this.clientes = c, error: () => this.clientes = [] });
+    ruta.queryParamMap.subscribe((p) => {
+      this.citaFiltro = Number(p.get('citaId')) || null;
+      this.listar();
     });
   }
 
-  /**
-   * Obtiene los controles del formulario para simplificar las validaciones en la vista.
-   */
-  get f(): { [key: string]: AbstractControl } {
-    return this.form.controls;
-  }
-
-  /**
-   * Cita seleccionada actualmente en el formulario (para mostrar su veterinario y fecha).
-   */
-  get citaSeleccionada(): Cita | undefined {
-    const citaId = this.form.value.citaId;
-    return this.citas.find((cita) => cita.id === citaId);
-  }
-
-  /**
-   * Carga los catálogos de clientes y medicamentos.
-   */
-  cargarCatalogos() {
-    this.clienteService.listarClientes().subscribe({
-      next: (data) => this.clientes = data ?? [],
-      error: (error) => Swal.fire('Error', mensajeError(error, 'No fue posible obtener los clientes'), 'error')
-    });
-    this.medicamentoService.listarMedicamentos().subscribe({
-      next: (data) => this.medicamentos = data ?? [],
-      error: (error) => Swal.fire('Error', mensajeError(error, 'No fue posible obtener los medicamentos'), 'error')
-    });
-  }
-
-  /**
-   * Lista todas las fórmulas médicas.
-   */
   listar() {
     this.cargando = true;
-    this.formulaService.listarFormulas()
-      .pipe(finalize(() => this.cargando = false))
-      .subscribe({
-        next: (data) => this.tabla.setItems(data),
-        error: (error) => Swal.fire('Error', mensajeError(error, 'No fue posible obtener las fórmulas'), 'error')
-      });
-  }
-
-  /**
-   * Carga las mascotas pertenecientes al cliente seleccionado (combo dependiente).
-   */
-  cargarMascotas(clienteId: number | null) {
-    this.mascotas = [];
-    if (!clienteId) {
-      return;
-    }
-    this.cargandoMascotas = true;
-    this.mascotaService.buscarPorCliente(clienteId)
-      .pipe(finalize(() => this.cargandoMascotas = false))
-      .subscribe({
-        next: (data) => this.mascotas = data ?? [],
-        error: (error) => Swal.fire('Error', mensajeError(error, 'No fue posible obtener las mascotas'), 'error')
-      });
-  }
-
-  /**
-   * Carga las citas atendidas de la mascota seleccionada (combo dependiente).
-   */
-  cargarCitas(mascotaId: number | null) {
-    this.citas = [];
-    if (!mascotaId) {
-      return;
-    }
-    this.cargandoCitas = true;
-    this.citaService.listarAtendidasPorMascota(mascotaId)
-      .pipe(finalize(() => this.cargandoCitas = false))
-      .subscribe({
-        next: (data) => this.citas = data ?? [],
-        error: (error) => Swal.fire('Error', mensajeError(error, 'No fue posible obtener las citas'), 'error')
-      });
-  }
-
-  /**
-   * Maneja el cambio de cliente: limpia mascota y cita y recarga las mascotas.
-   */
-  onClienteChange(clienteId: number | null) {
-    this.form.patchValue({ mascotaId: null, citaId: null });
-    this.citas = [];
-    this.cargarMascotas(clienteId);
-  }
-
-  /**
-   * Maneja el cambio de mascota: limpia la cita y recarga las citas atendidas.
-   */
-  onMascotaChange(mascotaId: number | null) {
-    this.form.patchValue({ citaId: null });
-    this.cargarCitas(mascotaId);
-  }
-
-  /**
-   * Abre el modal para crear una nueva fórmula médica.
-   */
-  nuevaFormula() {
-    this.formulaSeleccionada = null;
-    this.resetFormulario();
-    this.mascotas = [];
-    this.citas = [];
-    this.abrirModal('C');
-  }
-
-  /**
-   * Abre el modal para editar una fórmula médica existente.
-   */
-  abrirEdicion(formula: FormulaMedica) {
-    this.formulaSeleccionada = formula;
-    const clienteId = formula.cita?.cliente?.clienteId ?? null;
-    const mascotaId = formula.cita?.mascota?.mascotaId ?? null;
-    this.form.patchValue({
-      clienteId: clienteId,
-      mascotaId: mascotaId,
-      citaId: formula.cita?.id ?? null,
-      medicamentoId: formula.medicamento?.id ?? null,
-      dosis: formula.dosis ?? '',
-      frecuencia: formula.frecuencia ?? '',
-      duracionDias: formula.duracionDias ?? null,
-      indicaciones: formula.indicaciones ?? '',
-      fechaEmision: formula.fechaEmision ? String(formula.fechaEmision).slice(0, 16) : ''
+    this.servicio.listarFormulas(this.citaFiltro).subscribe({
+      next: (f) => { this.formulas = f; this.cargando = false; },
+      error: (e) => { this.cargando = false; Swal.fire('Error', e?.error?.message ?? 'No se pudieron cargar las fórmulas', 'error'); }
     });
-    this.cargarMascotas(clienteId);
-    this.cargarCitas(mascotaId);
-    this.abrirModal('E');
   }
 
-  /**
-   * Reinicia el formulario a su estado inicial.
-   */
-  resetFormulario() {
-    this.form.reset({ dosis: '', frecuencia: '', indicaciones: '', fechaEmision: '' });
-    this.form.markAsPristine();
-    this.form.markAsUntouched();
+  quitarFiltro() { this.citaFiltro = null; this.listar(); }
+
+  /** `true` si todavía se puede editar (borrador, o confirmada sin despachar). */
+  editable(f: FormulaMedica): boolean {
+    return f.estado === 'BORRADOR' || f.estadoDespacho === 'PENDIENTE_DESPACHO';
   }
 
-  /**
-   * Abre el modal del formulario indicando el modo (C = crear, E = editar).
-   */
-  abrirModal(modo: string) {
-    this.titleModal = modo === 'C' ? 'Nueva fórmula médica' : 'Editar fórmula médica';
-    this.titleBoton = modo === 'C' ? 'Guardar' : 'Actualizar';
-    const modalElement = document.getElementById('modalFormula');
-    if (modalElement) {
-      this.modalFormulario ??= new Modal(modalElement);
-      this.modalFormulario.show();
+  estadoClase(f: FormulaMedica): string {
+    return f.estado === 'BORRADOR' ? 'bg-warning text-dark' : 'bg-success';
+  }
+
+  // ----- alta / edición -----
+  nueva() {
+    this.formulaId = undefined;
+    this.indicaciones = '';
+    this.lineas = [this.lineaVacia()];
+    this.clienteId = this.mascotaId = this.citaId = null;
+    this.mascotas = []; this.citas = []; this.citaFija = null;
+    this.titleModal = 'Nueva fórmula médica';
+    if (this.citaFiltro) {
+      this.citaId = this.citaFiltro;
+      this.calendario.consultar(this.citaFiltro).subscribe((c) => this.citaFija = c);
     }
+    this.abrir('modalFormula', (m) => this.modalForm = m);
   }
 
-  /**
-   * Cierra el modal del formulario y reinicia el estado.
-   */
-  cerrarModal() {
-    this.modalFormulario?.hide();
-    this.resetFormulario();
-    this.formulaSeleccionada = null;
+  editar(f: FormulaMedica) {
+    this.formulaId = f.id;
+    this.citaId = f.cita?.id ?? null;
+    this.citaFija = f.cita ?? null;
+    this.indicaciones = f.indicaciones ?? '';
+    this.lineas = (f.detalles ?? []).map((d) => ({
+      medicamentoId: d.medicamento?.id ?? null, dosis: d.dosis ?? '', frecuencia: d.frecuencia ?? '', duracionDias: d.duracionDias ?? null,
+      unidadesPorDosis: d.unidadesPorDosis ?? null, dosisPorDia: d.dosisPorDia ?? null, cantidadPrescrita: d.cantidadPrescrita ?? null,
+      viaAdministracion: d.viaAdministracion, indicaciones: d.indicaciones
+    }));
+    this.titleModal = `Editar fórmula #${f.id}`;
+    this.abrir('modalFormula', (m) => this.modalForm = m);
   }
 
-  /**
-   * Guarda o actualiza la fórmula médica según el modo del formulario.
-   * Valida en el cliente los campos obligatorios y que la fecha de emisión no sea
-   * anterior a la cita; el backend repite todas las validaciones.
-   */
+  alCambiarCliente() {
+    this.mascotaId = null; this.citaId = null; this.mascotas = []; this.citas = [];
+    if (this.clienteId) { this.mascotaService.buscarPorCliente(this.clienteId).subscribe({ next: (m) => this.mascotas = m, error: () => this.mascotas = [] }); }
+  }
+
+  alCambiarMascota() {
+    this.citaId = null; this.citas = [];
+    if (this.mascotaId) { this.citaService.listarAtendidasPorMascota(this.mascotaId).subscribe({ next: (c) => this.citas = c, error: () => this.citas = [] }); }
+  }
+
+  agregarLinea() { this.lineas.push(this.lineaVacia()); }
+  quitarLinea(i: number) { if (this.lineas.length > 1) { this.lineas.splice(i, 1); } }
+
+  medicamento(id: number | null): Inventario | undefined { return this.medicamentos.find((m) => m.id === id); }
+
+  /** Cantidad total requerida: unidades por dosis × dosis por día × duración (si se informan). */
+  cantidadCalculada(l: FormulaLineaRq): number | null {
+    return l.unidadesPorDosis && l.dosisPorDia && l.duracionDias ? l.unidadesPorDosis * l.dosisPorDia * l.duracionDias : null;
+  }
+
+  cantidadFinal(l: FormulaLineaRq): number {
+    return this.cantidadCalculada(l) ?? l.cantidadPrescrita ?? 0;
+  }
+
+  errorForm(): string | null {
+    if (!this.citaId) { return 'Seleccione la cita atendida de la fórmula'; }
+    const repetidos = new Set<number>();
+    for (const l of this.lineas) {
+      if (!l.medicamentoId) { return 'Cada línea requiere un medicamento'; }
+      if (repetidos.has(l.medicamentoId)) { return 'Hay un medicamento repetido en la fórmula'; }
+      repetidos.add(l.medicamentoId);
+      if (!l.dosis?.trim() || !l.frecuencia?.trim()) { return 'Dosis y frecuencia son obligatorias'; }
+      if (!l.duracionDias || l.duracionDias <= 0) { return 'La duración debe ser mayor que cero'; }
+      if ((l.unidadesPorDosis || l.dosisPorDia) && !this.cantidadCalculada(l)) { return 'Para calcular la cantidad informe unidades por dosis y dosis por día'; }
+      if (this.cantidadFinal(l) <= 0) { return 'La cantidad prescrita debe ser mayor que cero'; }
+    }
+    return null;
+  }
+
   guardar() {
-    if (this.form.invalid) {
-      this.form.markAllAsTouched();
-      Swal.fire('Campos requeridos', 'Por favor diligencie todos los campos obligatorios.', 'warning');
-      return;
-    }
-
-    const valores = this.form.value;
-    const cita = this.citaSeleccionada;
-    if (valores.fechaEmision && cita?.fechaHora && new Date(valores.fechaEmision) < new Date(cita.fechaHora)) {
-      Swal.fire('Atención', 'La fecha de emisión no puede ser anterior a la fecha de la consulta', 'warning');
-      return;
-    }
-
+    const error = this.errorForm();
+    if (error) { Swal.fire('Atención', error, 'warning'); return; }
     const rq: FormulaMedicaRq = {
-      formulaId: this.formulaSeleccionada?.id,
-      mascotaId: Number(valores.mascotaId),
-      citaId: Number(valores.citaId),
-      medicamentoId: Number(valores.medicamentoId),
-      dosis: valores.dosis,
-      frecuencia: valores.frecuencia,
-      duracionDias: Number(valores.duracionDias),
-      indicaciones: valores.indicaciones || undefined,
-      fechaEmision: valores.fechaEmision || undefined
+      formulaId: this.formulaId, citaId: this.citaId!, indicaciones: this.indicaciones,
+      detalles: this.lineas.map((l) => ({ ...l, cantidadPrescrita: this.cantidadFinal(l) }))
     };
-
-    const peticion = this.formulaSeleccionada
-      ? this.formulaService.actualizarFormula(rq)
-      : this.formulaService.guardarFormula(rq);
-
     this.guardando = true;
-    peticion
-      .pipe(finalize(() => this.guardando = false))
-      .subscribe({
-        next: (respuesta) => {
-          Swal.fire('Éxito', respuesta.message ?? 'Operación exitosa', 'success');
-          this.cerrarModal();
-          this.listar();
-        },
-        error: (error) => Swal.fire('Error', mensajeError(error, 'No fue posible completar la operación'), 'error')
-      });
-  }
-
-  /**
-   * Consulta el detalle completo de una fórmula y lo muestra en el modal "Ver".
-   */
-  verDetalle(formula: FormulaMedica) {
-    if (!formula.id) {
-      return;
-    }
-    this.formulaService.consultarFormula(formula.id).subscribe({
-      next: (data) => {
-        this.formulaVer = data;
-        const modalElement = document.getElementById('modalDetalleFormula');
-        if (modalElement) {
-          this.modalDetalle ??= new Modal(modalElement);
-          this.modalDetalle.show();
-        }
-      },
-      error: (error) => Swal.fire('Error', mensajeError(error, 'No fue posible obtener el detalle de la fórmula'), 'error')
+    (this.formulaId ? this.servicio.actualizarFormula(rq) : this.servicio.guardarFormula(rq)).subscribe({
+      next: (r) => { this.guardando = false; this.modalForm?.hide(); Swal.fire('Éxito', r.message ?? 'Fórmula guardada', 'success'); this.listar(); },
+      error: (e) => { this.guardando = false; Swal.fire('No se pudo guardar', e?.error?.message ?? 'Error inesperado', 'error'); }
     });
   }
 
-  /**
-   * Cierra el modal de detalle.
-   */
-  cerrarDetalle() {
-    this.modalDetalle?.hide();
-    this.formulaVer = null;
+  // ----- confirmar / ver / pdf -----
+  confirmar(f: FormulaMedica) {
+    Swal.fire({ title: `Confirmar fórmula #${f.id}`, text: 'Pasará al despacho. El inventario solo se descuenta cuando se entregue.', icon: 'question', showCancelButton: true, confirmButtonText: 'Confirmar' })
+      .then((r) => {
+        if (!r.isConfirmed) { return; }
+        this.servicio.confirmar(f.id!).subscribe({
+          next: (rs) => { Swal.fire('Éxito', rs.message ?? 'Fórmula confirmada', 'success'); this.listar(); },
+          error: (e) => Swal.fire('No se pudo confirmar', e?.error?.message ?? 'Error inesperado', 'error')
+        });
+      });
+  }
+
+  ver(f: FormulaMedica) {
+    this.detalle = f;
+    this.disponibilidad = [];
+    this.servicio.disponibilidad(f.id!).subscribe({ next: (d) => this.disponibilidad = d, error: () => this.disponibilidad = [] });
+    this.abrir('modalDetalleFormula', (m) => this.modalDetalle = m);
+  }
+
+  disponible(medicamentoId?: number): DisponibilidadFormula | undefined {
+    return this.disponibilidad.find((d) => d.medicamentoId === medicamentoId);
+  }
+
+  pdf(f: FormulaMedica) {
+    this.servicio.pdf(f.id!).subscribe({ next: (b) => abrirPdf(b), error: () => Swal.fire('Error', 'No se pudo generar el PDF', 'error') });
+  }
+
+  private lineaVacia(): FormulaLineaRq {
+    return { medicamentoId: null, dosis: '', frecuencia: '', duracionDias: null, unidadesPorDosis: null, dosisPorDia: null, cantidadPrescrita: null, viaAdministracion: 'Oral', indicaciones: '' };
+  }
+
+  private abrir(id: string, guardar: (m: Modal) => void) {
+    const el = document.getElementById(id);
+    if (el) { const m = new Modal(el); guardar(m); m.show(); }
   }
 }

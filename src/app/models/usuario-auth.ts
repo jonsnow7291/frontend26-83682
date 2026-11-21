@@ -8,6 +8,8 @@ export interface UsuarioAuth {
     username?: string;
     /** Rol del usuario (ADMIN, SECRETARIA, MEDICO, DESPACHO_MEDICO). */
     rol?: string;
+    /** Médico asociado al usuario (solo rol MEDICO). */
+    medicoId?: number | null;
     /** Token JWT de sesión. */
     token?: string;
 }

@@ -14,7 +14,6 @@ import { EspecializacionComponent } from './demo/pages/especializacion/especiali
 import { CitaComponent } from './demo/pages/cita/cita.component';
 import { HistoriaMedicaComponent } from './demo/pages/historia-medica/historia-medica.component';
 import { AnotacionHistoriaComponent } from './demo/pages/anotacion-historia/anotacion-historia.component';
-import { MedicamentoComponent } from './demo/pages/medicamento/medicamento.component';
 import { FormulaMedicaComponent } from './demo/pages/formula-medica/formula-medica.component';
 import { InventarioComponent } from './demo/pages/inventario/inventario.component';
 import { CargaMasivaComponent } from './demo/pages/inventario/carga-masiva/carga-masiva.component';
@@ -23,6 +22,8 @@ import { AtencionMedicaComponent } from './demo/pages/atencion-medica/atencion-m
 import { FacturaComponent } from './demo/pages/factura/factura.component';
 import { ReportesComponent } from './demo/pages/reportes/reportes.component';
 import { DespachoComponent } from './demo/pages/despacho/despacho.component';
+import { TarifaComponent } from './demo/pages/tarifa/tarifa.component';
+import { HorarioComponent } from './demo/pages/horario/horario.component';
 
 /**
  * Rutas de la aplicación: cada módulo de gestión cuelga de `/inicio`.
@@ -46,15 +47,16 @@ export const routes: Routes = [
       { path: 'citas', component: CitaComponent, data: { title: 'Citas', roles: ['ADMIN', 'SECRETARIA'] }, canActivate: [RolGuard] },
       { path: 'historias-medicas', component: HistoriaMedicaComponent, data: { title: 'Historias Médicas', roles: ['ADMIN', 'MEDICO', 'SECRETARIA'] }, canActivate: [RolGuard] },
       { path: 'anotaciones', component: AnotacionHistoriaComponent, data: { title: 'Anotaciones', roles: ['ADMIN', 'MEDICO'] }, canActivate: [RolGuard] },
-      { path: 'medicamentos', component: MedicamentoComponent, data: { title: 'Medicamentos', roles: ['ADMIN'] }, canActivate: [RolGuard] },
       { path: 'formulas-medicas', component: FormulaMedicaComponent, data: { title: 'Fórmulas Médicas', roles: ['ADMIN', 'MEDICO'] }, canActivate: [RolGuard] },
       { path: 'inventario', component: InventarioComponent, data: { title: 'Inventario', roles: ['ADMIN', 'DESPACHO_MEDICO'] }, canActivate: [RolGuard] },
       { path: 'inventario/carga-masiva', component: CargaMasivaComponent, data: { title: 'Carga masiva', roles: ['ADMIN'] }, canActivate: [RolGuard] },
-      { path: 'calendario', component: CalendarioComponent, data: { title: 'Calendario de citas', roles: ['ADMIN', 'SECRETARIA', 'MEDICO'] }, canActivate: [RolGuard] },
+      { path: 'calendario', component: CalendarioComponent, data: { title: 'Calendario de citas', roles: ['MEDICO'] }, canActivate: [RolGuard] },
       { path: 'atencion-medica', component: AtencionMedicaComponent, data: { title: 'Atención médica', roles: ['ADMIN', 'MEDICO'] }, canActivate: [RolGuard] },
       { path: 'facturas', component: FacturaComponent, data: { title: 'Facturación', roles: ['ADMIN', 'SECRETARIA'] }, canActivate: [RolGuard] },
       { path: 'reportes', component: ReportesComponent, data: { title: 'Reportes', roles: ['ADMIN'] }, canActivate: [RolGuard] },
-      { path: 'despacho', component: DespachoComponent, data: { title: 'Despacho de medicamentos', roles: ['ADMIN', 'DESPACHO_MEDICO'] }, canActivate: [RolGuard] },
+      { path: 'despacho', component: DespachoComponent, data: { title: 'Despacho de medicamentos', roles: ['DESPACHO_MEDICO'] }, canActivate: [RolGuard] },
+      { path: 'tarifas', component: TarifaComponent, data: { title: 'Tarifas', roles: ['ADMIN'] }, canActivate: [RolGuard] },
+      { path: 'horarios', component: HorarioComponent, data: { title: 'Horarios de veterinarios', roles: ['ADMIN'] }, canActivate: [RolGuard] },
       /* Inserte nuevos menus aqui */
     ]
   },

@@ -1,0 +1,70 @@
+<div class="container-fluid">
+  <div class="card">
+    <div class="card-header d-flex flex-wrap justify-content-between align-items-center gap-2">
+      <h5 class="mb-0">Tarifas por especialidad y servicio</h5>
+      <div class="d-flex gap-2">
+        <select class="form-select" [(ngModel)]="filtroEspecialidad" (change)="listar()">
+          <option [ngValue]="null">Todas las especialidades</option>
+          <option *ngFor="let e of especialidades" [ngValue]="e.id">{{ e.nombre }}</option>
+        </select>
+        <button class="btn btn-primary text-nowrap" (click)="nueva()">Nueva tarifa</button>
+      </div>
+    </div>
+    <div class="card-body table-responsive">
+      <div *ngIf="cargando" class="text-center text-muted py-2">Cargando...</div>
+      <table class="table table-striped align-middle">
+        <thead class="table-light"><tr><th>Especialidad</th><th>Servicio</th><th class="text-end">Valor</th><th class="text-end">IVA %</th><th class="text-center">Estado</th><th class="text-center">Acciones</th></tr></thead>
+        <tbody>
+          <tr *ngIf="!cargando && tarifas.length === 0"><td colspan="6" class="text-center text-muted">No hay tarifas registradas</td></tr>
+          <tr *ngFor="let t of tarifas">
+            <td>{{ nombreEspecialidad(t.especializacionId) }}</td><td>{{ t.servicio }}</td>
+            <td class="text-end">{{ t.valor | number:'1.0-0' }}</td><td class="text-end">{{ t.ivaPorcentaje }}</td>
+            <td class="text-center"><span class="badge" [ngClass]="t.activa ? 'bg-success' : 'bg-secondary'">{{ t.activa ? 'Activa' : 'Inactiva' }}</span></td>
+            <td class="text-center text-nowrap">
+              <button class="btn btn-sm btn-outline-primary me-1" (click)="editar(t)">Modificar</button>
+              <button class="btn btn-sm btn-outline-warning me-1" (click)="cambiarEstado(t)">{{ t.activa ? 'Inactivar' : 'Activar' }}</button>
+              <button class="btn btn-sm btn-outline-secondary" (click)="verHistorial(t)">Historial</button>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="modal fade" id="modalTarifa" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog"><div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">{{ titleModal }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body"><div class="row g-3">
+        <div class="col-12"><label class="form-label">Especialidad *</label>
+          <select class="form-select" [(ngModel)]="form.especializacionId">
+            <option [ngValue]="0">Seleccione...</option>
+            <option *ngFor="let e of especialidades" [ngValue]="e.id">{{ e.nombre }}</option>
+          </select></div>
+        <div class="col-12"><label class="form-label">Servicio o tipo de consulta *</label><input class="form-control" maxlength="100" [(ngModel)]="form.servicio" placeholder="Ej.: Consulta general, Vacunación, Cirugía menor"></div>
+        <div class="col-md-6"><label class="form-label">Valor *</label><input type="number" min="0" class="form-control" [(ngModel)]="form.valor"></div>
+        <div class="col-md-6"><label class="form-label">IVA % *</label><input type="number" min="0" max="100" class="form-control" [(ngModel)]="form.ivaPorcentaje"></div>
+        <div class="col-12 small text-muted">Los cambios no modifican facturas ya emitidas: el precio se congela en cada factura.</div>
+      </div></div>
+      <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-primary" (click)="guardar()">Guardar</button></div>
+    </div></div>
+  </div>
+
+  <div class="modal fade" id="modalLogTarifa" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-lg"><div class="modal-content">
+      <div class="modal-header"><h5 class="modal-title">Historial — {{ tarifaHistorial?.servicio }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+      <div class="modal-body">
+        <table class="table table-sm table-bordered">
+          <thead><tr><th>Fecha</th><th>Acción</th><th class="text-end">Valor anterior</th><th class="text-end">Valor nuevo</th><th class="text-end">IVA ant.</th><th class="text-end">IVA nuevo</th><th>Usuario</th></tr></thead>
+          <tbody>
+            <tr *ngIf="historial.length === 0"><td colspan="7" class="text-center text-muted">Sin cambios registrados</td></tr>
+            <tr *ngFor="let h of historial">
+              <td>{{ h.fecha | date:'yyyy-MM-dd HH:mm' }}</td><td>{{ h.accion }}</td>
+              <td class="text-end">{{ h.valorAnterior | number:'1.0-0' }}</td><td class="text-end">{{ h.valorNuevo | number:'1.0-0' }}</td>
+              <td class="text-end">{{ h.ivaAnterior }}</td><td class="text-end">{{ h.ivaNuevo }}</td><td>{{ h.usuarioId }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div></div>
+  </div>
+</div>
