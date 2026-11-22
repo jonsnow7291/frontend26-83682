@@ -4,7 +4,19 @@
             <h4 class="mb-0"><i class="fa fa-sign-in" aria-hidden="true"></i> Iniciar sesión</h4>
         </div>
         <div class="card-body">
-            <form (ngSubmit)="ingresar()">
+            <form *ngIf="desafioId" (ngSubmit)="verificar()">
+                <p class="small">Enviamos un código de 6 dígitos a <strong>{{ correo }}</strong>. Vence en 5 minutos.</p>
+                <div class="mb-3">
+                    <label class="form-label">Código de verificación</label>
+                    <input type="text" class="form-control text-center fs-4" [(ngModel)]="codigo" name="codigo"
+                        maxlength="6" inputmode="numeric" autocomplete="one-time-code" placeholder="000000" autofocus />
+                </div>
+                <button type="submit" class="btn btn-primary w-100 mb-2" [disabled]="cargando">
+                    {{ cargando ? 'Verificando...' : 'Verificar' }}
+                </button>
+                <button type="button" class="btn btn-link w-100" (click)="cancelarOtp()">Volver</button>
+            </form>
+            <form *ngIf="!desafioId" (ngSubmit)="ingresar()">
                 <div class="mb-3">
                     <label class="form-label">Usuario</label>
                     <input type="text" class="form-control" [(ngModel)]="username" name="username"

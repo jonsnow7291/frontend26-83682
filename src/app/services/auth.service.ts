@@ -5,6 +5,15 @@ import { HttpClient } from '@angular/common/http';
 import { UsuarioAuth } from '../models/usuario-auth';
 import { environment } from '../../environments/environment';
 
+/** Respuesta de `POST /auth/login`: sesión completa o desafío OTP pendiente. */
+export interface RespuestaLogin {
+  token?: string;
+  usuario?: UsuarioAuth;
+  otpRequerido?: boolean;
+  desafioId?: string;
+  correoEnmascarado?: string;
+}
+
 /**
  * Servicio de autenticación y sesión de usuario.
  * Gestiona el token, el rol y el estado de inicio de sesión.
@@ -91,10 +100,19 @@ export class AuthService {
    * @param username usuario.
    * @param password contraseña.
    */
-  iniciarSesion(username: string, password: string): Observable<UsuarioAuth> {
+  iniciarSesion(username: string, password: string): Observable<RespuestaLogin> {
+    return this.http.post<RespuestaLogin>(`${environment.apiUrlAuth}/auth/login`, { username, password });
+  }
+
+  /**
+   * Segundo paso del login (usuarios con OTP): valida el código recibido por correo.
+   * @param desafioId identificador devuelto por el login.
+   * @param codigo código de 6 dígitos.
+   */
+  verificarOtp(desafioId: string, codigo: string): Observable<UsuarioAuth> {
     return this.http
-      .post<{ token: string; usuario: UsuarioAuth }>(`${environment.apiUrlAuth}/auth/login`, { username, password })
-      .pipe(map((rs) => ({ ...rs.usuario, token: rs.token })));
+      .post<RespuestaLogin>(`${environment.apiUrlAuth}/auth/verificar-otp`, { desafioId, codigo })
+      .pipe(map((rs) => ({ ...rs.usuario!, token: rs.token })));
   }
 
   /**
