@@ -382,6 +382,11 @@ export class CitaComponent implements OnInit {
       title: '¿Cancelar esta cita?',
       text: `Mascota: ${cita.mascota?.nombreMascota ?? ''} | Fecha: ${cita.fechaHora ?? ''}`,
       icon: 'question',
+      input: 'text',
+      inputLabel: 'Motivo de la cancelación',
+      inputPlaceholder: 'Ej.: el propietario no puede asistir',
+      inputAttributes: { maxlength: '200' },
+      inputValidator: (valor) => (!valor?.trim() ? 'Indique el motivo de la cancelación' : null),
       showCancelButton: true,
       confirmButtonColor: '#d33',
       cancelButtonColor: '#3085d6',
@@ -389,7 +394,7 @@ export class CitaComponent implements OnInit {
       cancelButtonText: 'Volver'
     }).then((result) => {
       if (result.isConfirmed && cita.id) {
-        this.citaService.cancelarCita(cita.id).subscribe({
+        this.citaService.cancelarCita(cita.id, String(result.value ?? '')).subscribe({
           next: (resp) => {
             Swal.fire('Cancelada', resp.message ?? 'La cita ha sido cancelada.', 'success');
             this.listar();

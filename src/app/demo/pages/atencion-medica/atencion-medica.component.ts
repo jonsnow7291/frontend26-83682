@@ -63,6 +63,11 @@ export class AtencionMedicaComponent {
     });
   }
 
+  /** Solo se atienden citas de hoy o de días pasados (regla del backend). */
+  esAtendible(c: CitaCalendario): boolean {
+    return (c.inicio ?? '').substring(0, 10) <= new Date().toLocaleDateString('en-CA');
+  }
+
   elegir(c: CitaCalendario) {
     this.router.navigate(['/inicio/atencion-medica'], { queryParams: { citaId: c.id } });
   }

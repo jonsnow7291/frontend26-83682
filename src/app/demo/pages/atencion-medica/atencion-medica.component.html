@@ -9,7 +9,10 @@
           <tr *ngIf="pendientes.length === 0"><td colspan="6" class="text-center text-muted">No hay citas por atender</td></tr>
           <tr *ngFor="let c of pendientes">
             <td>{{ c.inicio | date:'yyyy-MM-dd HH:mm' }}</td><td>{{ c.mascota }}</td><td>{{ c.propietario }}</td><td>{{ c.motivo }}</td><td>{{ c.estado }}</td>
-            <td class="text-end"><button class="btn btn-sm btn-primary" (click)="elegir(c)">Atender</button></td>
+            <td class="text-end">
+              <button *ngIf="esAtendible(c)" class="btn btn-sm btn-primary" (click)="elegir(c)">Atender</button>
+              <span *ngIf="!esAtendible(c)" class="text-muted small">Programada para una fecha futura</span>
+            </td>
           </tr>
         </tbody>
       </table>

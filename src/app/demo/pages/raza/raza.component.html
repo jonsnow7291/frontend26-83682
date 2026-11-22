@@ -1,1 +1,16 @@
-<app-tabla-listado [titulo]="titulo" [columnas]="columnas" [items]="items"></app-tabla-listado>
+<app-tabla-listado [titulo]="titulo" [columnas]="columnas" [items]="items" [acciones]="acciones">
+  <button botones type="button" class="btn btn-primary" (click)="nueva()">Nueva raza</button>
+</app-tabla-listado>
+
+<div class="modal fade" id="modalRaza" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">{{ titleModal }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body"><div class="row g-3">
+      <div class="col-md-8"><label class="form-label">Nombre *</label><input class="form-control" maxlength="100" [(ngModel)]="form.nombre"></div>
+      <div class="col-md-4"><label class="form-label">Especie *</label>
+        <input class="form-control" maxlength="100" list="especiesRaza" [(ngModel)]="form.especie">
+        <datalist id="especiesRaza"><option value="Canino"></option><option value="Felino"></option><option value="Ave"></option><option value="Roedor"></option><option value="Reptil"></option></datalist></div>
+    </div></div>
+    <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-primary" (click)="guardar()">Guardar</button></div>
+  </div></div>
+</div>

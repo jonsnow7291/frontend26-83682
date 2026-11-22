@@ -117,9 +117,13 @@ export class CitaService {
    * Cancela una cita de forma explícita.
    *
    * @param citaId Identificador de la cita a cancelar.
+   * @param motivo Motivo de la cancelación (queda en el historial de la cita).
    */
-  cancelarCita(citaId: number): Observable<Respuesta> {
-    const params = new HttpParams().set('citaId', citaId);
+  cancelarCita(citaId: number, motivo?: string): Observable<Respuesta> {
+    let params = new HttpParams().set('citaId', citaId);
+    if (motivo?.trim()) {
+      params = params.set('motivo', motivo.trim());
+    }
     return this.backendService.patch(environment.apiUrlAuth, this.api, "cancelar", null, params);
   }
 }

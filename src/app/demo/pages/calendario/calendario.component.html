@@ -115,9 +115,9 @@
             <button class="btn btn-outline-primary" (click)="editar()" [disabled]="!citaCompleta">Editar</button>
             <button class="btn btn-outline-danger" (click)="cancelar()">Cancelar cita</button>
             <button class="btn btn-info" *ngIf="seleccionada.estado === 'PENDIENTE'" (click)="confirmar()">Confirmar</button>
-            <button class="btn btn-success" (click)="atender()">Marcar atendida</button>
+            <button class="btn btn-success" *ngIf="atendible" (click)="atender()">Marcar atendida</button>
           </ng-container>
-          <button class="btn btn-primary" *ngIf="seleccionada.estado === 'ATENDIDA' || seleccionada.estado === 'CONFIRMADA' || seleccionada.estado === 'PENDIENTE'" (click)="iniciarAtencion()">Abrir atención médica</button>
+          <button class="btn btn-primary" *ngIf="atendible && (seleccionada.estado === 'ATENDIDA' || seleccionada.estado === 'CONFIRMADA' || seleccionada.estado === 'PENDIENTE')" (click)="iniciarAtencion()">Abrir atención médica</button>
         </div>
       </div>
     </div></div>

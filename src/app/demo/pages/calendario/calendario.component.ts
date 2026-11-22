@@ -161,6 +161,12 @@ export class CalendarioComponent {
     return !!this.seleccionada && ['PENDIENTE', 'CONFIRMADA'].includes(this.seleccionada.estado);
   }
 
+  /** `true` si la cita es de hoy o de un día pasado: solo entonces se puede atender (regla del backend). */
+  get atendible(): boolean {
+    if (!this.seleccionada?.inicio) { return false; }
+    return this.seleccionada.inicio.substring(0, 10) <= new Date().toLocaleDateString('en-CA');
+  }
+
   confirmar() { this.ejecutar(this.servicio.confirmar(this.seleccionada!.id), 'Cita confirmada'); }
   atender() { this.ejecutar(this.servicio.atender(this.seleccionada!.id), 'Cita marcada como atendida'); }
 

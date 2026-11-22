@@ -24,4 +24,14 @@ export class RazaService {
   listarRazas(): Observable<Raza[]> {
     return this.backendService.get(environment.apiUrlAuth, this.api, "listar-todos");
   }
+
+  /** Registra una raza nueva. */
+  guardar(datos: Record<string, unknown>): Observable<Raza> {
+    return this.backendService.post(environment.apiUrlAuth, this.api, 'guardar', datos);
+  }
+
+  /** Actualiza una raza existente. */
+  actualizar(datos: Record<string, unknown>): Observable<Raza> {
+    return this.backendService.put(environment.apiUrlAuth, this.api, 'actualizar', datos);
+  }
 }
