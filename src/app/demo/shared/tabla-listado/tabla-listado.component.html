@@ -1,7 +1,10 @@
 <div class="container-fluid">
     <div class="card">
         <div class="card-header">
-            <h5 class="mb-3">{{ titulo }}</h5>
+            <div class="d-flex justify-content-between align-items-center mb-3">
+                <h5 class="mb-0">{{ titulo }}</h5>
+                <ng-content select="[botones]"></ng-content>
+            </div>
             <div class="row align-items-end">
                 <div class="col-md-5 mb-2">
                     <input class="form-control" [placeholder]="'Buscar en ' + titulo.toLowerCase()" type="text"
@@ -18,21 +21,26 @@
                     <thead>
                         <tr>
                             <th class="text-center" *ngFor="let col of columnas">{{ col.titulo }}</th>
+                            <th class="text-center" *ngIf="acciones.length > 0">Acciones</th>
                         </tr>
                     </thead>
                     <tbody *ngIf="items.length === 0">
                         <tr>
-                            <td [attr.colspan]="columnas.length" class="text-center">No hay registros</td>
+                            <td [attr.colspan]="columnas.length + (acciones.length > 0 ? 1 : 0)" class="text-center">No hay registros</td>
                         </tr>
                     </tbody>
                     <tbody *ngIf="items.length > 0 && filtrados.length === 0">
                         <tr>
-                            <td [attr.colspan]="columnas.length" class="text-center">No se encontraron resultados</td>
+                            <td [attr.colspan]="columnas.length + (acciones.length > 0 ? 1 : 0)" class="text-center">No se encontraron resultados</td>
                         </tr>
                     </tbody>
                     <tbody *ngIf="filtrados.length > 0">
                         <tr *ngFor="let item of paginados">
                             <td class="text-center" *ngFor="let col of columnas">{{ col.valor(item) }}</td>
+                            <td class="text-center text-nowrap" *ngIf="acciones.length > 0">
+                                <button *ngFor="let a of acciones" type="button" class="btn btn-sm me-1"
+                                    [ngClass]="a.clase ?? 'btn-outline-primary'" (click)="a.ejecutar(item)">{{ textoAccion(a, item) }}</button>
+                            </td>
                         </tr>
                     </tbody>
                 </table>

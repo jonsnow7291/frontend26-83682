@@ -27,6 +27,10 @@ export interface CitaRq {
    */
   medicoId: number;
   /**
+   * Duración de la cita en minutos (10 a 240; por defecto 30).
+   */
+  duracionMinutos?: number;
+  /**
    * Fecha y hora en formato ISO (yyyy-MM-ddTHH:mm:ss).
    */
   fechaHora: string;

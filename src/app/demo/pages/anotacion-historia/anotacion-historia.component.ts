@@ -1,5 +1,6 @@
 import { Component } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { AuthService } from 'src/app/services/auth.service';
 import { FormsModule, ReactiveFormsModule, FormBuilder, FormGroup, Validators, AbstractControl } from '@angular/forms';
 import { finalize } from 'rxjs';
 import Swal from 'sweetalert2';
@@ -82,7 +83,8 @@ export class AnotacionHistoriaComponent {
     private readonly anotacionService: AnotacionHistoriaService,
     private readonly historiaService: HistoriaMedicaService,
     private readonly medicoService: MedicoService,
-    private readonly formBuilder: FormBuilder
+    private readonly formBuilder: FormBuilder,
+    private readonly auth: AuthService
   ) {
     this.inicializarFormulario();
     this.cargarCatalogos();
@@ -146,13 +148,29 @@ export class AnotacionHistoriaComponent {
       });
   }
 
+  /** Solo ADMIN y MEDICO escriben (la secretaria consulta). */
+  get puedeEscribir(): boolean {
+    return this.auth.tieneRol(['ADMIN', 'MEDICO']);
+  }
+
+  /** Médicos entre los que se puede firmar: un MEDICO solo se ofrece a sí mismo. */
+  get medicosDisponibles(): Medico[] {
+    const propio = this.auth.obtenerUsuario()?.medicoId;
+    return this.auth.obtenerRol() === 'MEDICO' && propio ? this.medicos.filter((m) => m.id === propio) : this.medicos;
+  }
+
+  /** Id del médico autenticado (solo si el usuario es MEDICO). */
+  private get medicoPropioId(): number | null {
+    return this.auth.obtenerRol() === 'MEDICO' ? (this.auth.obtenerUsuario()?.medicoId ?? null) : null;
+  }
+
   /**
    * Abre el modal para crear una nueva anotación.
    */
   nuevaAnotacion() {
     this.anotacionSeleccionada = null;
     this.resetFormulario();
-    this.form.patchValue({ historiaId: this.historiaId });
+    this.form.patchValue({ historiaId: this.historiaId, medicoId: this.medicoPropioId });
     this.abrirModal('C');
   }
 

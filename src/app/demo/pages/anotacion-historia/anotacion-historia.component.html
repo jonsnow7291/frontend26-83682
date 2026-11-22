@@ -12,7 +12,7 @@
                     </select>
                 </div>
                 <div class="col-md-auto ms-auto">
-                    <button class="btn btn-primary" type="button" (click)="nuevaAnotacion()">
+                    <button *ngIf="puedeEscribir" class="btn btn-primary" type="button" (click)="nuevaAnotacion()">
                         <i class="fa fa-plus" aria-hidden="true"></i>&nbsp; Nueva anotación
                     </button>
                 </div>
@@ -59,7 +59,7 @@
                                 <td>{{ anotacion.descripcion }}</td>
                                 <td>{{ anotacion.diagnostico || '—' }}</td>
                                 <td class="text-center">
-                                    <button class="btn btn-sm btn-outline-primary" (click)="abrirEdicion(anotacion)">
+                                    <button *ngIf="puedeEscribir" class="btn btn-sm btn-outline-primary" (click)="abrirEdicion(anotacion)">
                                         Editar
                                     </button>
                                 </td>
@@ -100,7 +100,7 @@
                             <select id="medicoId" class="form-select" formControlName="medicoId"
                                 [class.is-invalid]="f['medicoId'].touched && f['medicoId'].invalid">
                                 <option [ngValue]="null" disabled>Seleccione un médico</option>
-                                <option *ngFor="let medico of medicos" [ngValue]="medico.id">
+                                <option *ngFor="let medico of medicosDisponibles" [ngValue]="medico.id">
                                     {{ medico.nombres }} {{ medico.apellidos }}
                                 </option>
                             </select>

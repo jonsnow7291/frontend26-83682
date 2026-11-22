@@ -108,7 +108,7 @@ export class CitaComponent implements OnInit {
   /**
    * Estados válidos de una cita.
    */
-  readonly estadosPermitidos: string[] = ['PENDIENTE', 'CONFIRMADA', 'ATENDIDA', 'FINALIZADA', 'CANCELADA'];
+  readonly estadosPermitidos: string[] = ['PENDIENTE', 'CONFIRMADA'];
 
   /**
    * Fecha mínima permitida para agendar (hoy).
@@ -143,6 +143,7 @@ export class CitaComponent implements OnInit {
       fecha: ['', Validators.required],
       hora: ['', Validators.required],
       estado: ['PENDIENTE', Validators.required],
+      duracionMinutos: [30, [Validators.required, Validators.min(10), Validators.max(240)]],
       motivo: ['', [Validators.maxLength(500)]]
     });
   }
@@ -234,6 +235,7 @@ export class CitaComponent implements OnInit {
 
     this.form.reset({
       estado: 'PENDIENTE',
+      duracionMinutos: 30,
       fecha: this.fechaMinima,
       hora: '09:00'
     });
@@ -285,6 +287,7 @@ export class CitaComponent implements OnInit {
       fecha: fechaStr,
       hora: horaStr,
       estado: cita.estado,
+      duracionMinutos: this.minutosDe(cita),
       motivo: cita.motivo ?? ''
     });
 
@@ -307,6 +310,17 @@ export class CitaComponent implements OnInit {
   }
 
   /**
+   * Duración en minutos de una cita existente (fin - inicio); 30 si no se conoce.
+   */
+  private minutosDe(cita: Cita): number {
+    if (cita.fechaHora && cita.fechaHoraFin) {
+      const m = Math.round((new Date(cita.fechaHoraFin).getTime() - new Date(cita.fechaHora).getTime()) / 60000);
+      if (m >= 10 && m <= 240) { return m; }
+    }
+    return 30;
+  }
+
+  /**
    * Guarda o actualiza la cita médica.
    */
   guardar(): void {
@@ -326,6 +340,7 @@ export class CitaComponent implements OnInit {
       medicoId: Number(val.medicoId),
       fechaHora: fechaHoraCompleta,
       estado: val.estado,
+      duracionMinutos: Number(val.duracionMinutos),
       motivo: val.motivo ? val.motivo.trim() : ''
     };
 

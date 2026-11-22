@@ -21,7 +21,7 @@
                     <button class="btn btn-outline-secondary" type="button" (click)="limpiarFiltros()">Limpiar</button>
                 </div>
                 <div class="col-md-auto ms-auto">
-                    <button class="btn btn-primary" type="button" (click)="nuevaHistoria()">
+                    <button *ngIf="puedeEscribir" class="btn btn-primary" type="button" (click)="nuevaHistoria()">
                         <i class="fa fa-plus" aria-hidden="true"></i>&nbsp; Nueva historia
                     </button>
                 </div>
@@ -81,10 +81,10 @@
                                     <button class="btn btn-sm btn-outline-info me-1" (click)="verHistorial(historia)">
                                         Ver
                                     </button>
-                                    <button class="btn btn-sm btn-outline-primary me-1" (click)="abrirEdicion(historia)">
+                                    <button *ngIf="puedeEscribir" class="btn btn-sm btn-outline-primary me-1" (click)="abrirEdicion(historia)">
                                         Editar
                                     </button>
-                                    <button class="btn btn-sm btn-outline-danger" (click)="eliminar(historia)">
+                                    <button *ngIf="puedeEscribir" class="btn btn-sm btn-outline-danger" (click)="eliminar(historia)">
                                         Eliminar
                                     </button>
                                 </td>
@@ -226,7 +226,7 @@
                             [ngModel]="tablaAnotaciones.terminoBusqueda" (ngModelChange)="tablaAnotaciones.buscar($event)" />
                     </div>
                     <div class="col-md-auto ms-auto">
-                        <button class="btn btn-sm btn-primary" type="button" (click)="abrirFormAnotacion()">
+                        <button *ngIf="puedeEscribir" class="btn btn-sm btn-primary" type="button" (click)="abrirFormAnotacion()">
                             <i class="fa fa-plus" aria-hidden="true"></i>&nbsp; Nueva anotación
                         </button>
                     </div>
@@ -309,7 +309,7 @@
                                     <select id="anotacionMedicoId" class="form-select" formControlName="medicoId"
                                         [class.is-invalid]="fa['medicoId'].touched && fa['medicoId'].invalid">
                                         <option [ngValue]="null" disabled>Seleccione un veterinario</option>
-                                        <option *ngFor="let medico of medicos" [ngValue]="medico.id">
+                                        <option *ngFor="let medico of medicosDisponibles" [ngValue]="medico.id">
                                             {{ medico.nombres }} {{ medico.apellidos }}
                                         </option>
                                     </select>

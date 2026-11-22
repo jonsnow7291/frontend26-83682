@@ -89,9 +89,9 @@ export class MascotaComponent {
    */
   inicializarFormulario() {
     this.form = this.formBuilder.group({
-      nombreMascota: ['', Validators.required],
+      nombreMascota: ['', [Validators.required, Validators.maxLength(100), Validators.pattern(/^[^<>]*$/)]],
       razaId: [null, Validators.required],
-      edad: [null, [Validators.required, Validators.min(1)]],
+      edad: [null, [Validators.required, Validators.min(1), Validators.max(40)]],
       clienteId: [null, Validators.required]
     });
   }

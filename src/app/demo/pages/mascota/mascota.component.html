@@ -101,13 +101,13 @@
                                     <input id="nombreMascota" type="text" class="form-control"
                                         formControlName="nombreMascota"
                                         [class.is-invalid]="f['nombreMascota'].touched && f['nombreMascota'].invalid" />
-                                    <div class="invalid-feedback">El nombre es obligatorio.</div>
+                                    <div class="invalid-feedback">El nombre es obligatorio (máx. 100 caracteres, sin < ni >).</div>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="edad" class="form-label">Edad</label>
-                                    <input id="edad" type="number" min="1" class="form-control" formControlName="edad"
+                                    <input id="edad" type="number" min="1" max="40" class="form-control" formControlName="edad"
                                         [class.is-invalid]="f['edad'].touched && f['edad'].invalid" />
-                                    <div class="invalid-feedback">La edad es obligatoria y debe ser mayor a 0.</div>
+                                    <div class="invalid-feedback">La edad es obligatoria y debe estar entre 1 y 40 años.</div>
                                 </div>
                                 <div class="col-md-6 mb-3">
                                     <label for="razaId" class="form-label">Raza</label>

@@ -156,8 +156,12 @@ export class FormulaMedicaComponent {
       repetidos.add(l.medicamentoId);
       if (!l.dosis?.trim() || !l.frecuencia?.trim()) { return 'Dosis y frecuencia son obligatorias'; }
       if (!l.duracionDias || l.duracionDias <= 0) { return 'La duración debe ser mayor que cero'; }
+      if (l.duracionDias > 365) { return 'La duración no puede superar 365 días'; }
+      if (!l.viaAdministracion?.trim()) { return 'La vía de administración es obligatoria'; }
+      if ((l.unidadesPorDosis ?? 0) > 100 || (l.dosisPorDia ?? 0) > 24) { return 'Unidades por dosis (máx. 100) o dosis por día (máx. 24) exceden lo permitido'; }
       if ((l.unidadesPorDosis || l.dosisPorDia) && !this.cantidadCalculada(l)) { return 'Para calcular la cantidad informe unidades por dosis y dosis por día'; }
       if (this.cantidadFinal(l) <= 0) { return 'La cantidad prescrita debe ser mayor que cero'; }
+      if (this.cantidadFinal(l) > 10000) { return 'La cantidad total no puede superar 10 000 unidades por medicamento'; }
     }
     return null;
   }

@@ -19,6 +19,7 @@ import { ClienteService } from '../cliente/service/cliente.service';
 import { CitaService } from '../cita/service/cita.service';
 import { MedicoService } from '../medico/service/medico.service';
 import { AnotacionHistoriaService } from '../anotacion-historia/service/anotacion-historia.service';
+import { AuthService } from 'src/app/services/auth.service';
 import { PaginadorComponent } from 'src/app/demo/shared/paginador/paginador.component';
 import { TablaDatos, tiempo, nombreCompleto, mensajeError, badgeEstadoCita } from 'src/app/utils/tabla-datos';
 
@@ -130,7 +131,8 @@ export class HistoriaMedicaComponent {
     private readonly citaService: CitaService,
     private readonly medicoService: MedicoService,
     private readonly anotacionService: AnotacionHistoriaService,
-    private readonly formBuilder: FormBuilder
+    private readonly formBuilder: FormBuilder,
+    private readonly auth: AuthService
   ) {
     this.inicializarFormularios();
     this.cargarCatalogos();
@@ -154,6 +156,22 @@ export class HistoriaMedicaComponent {
       observacion: [''],
       diagnostico: ['', Validators.required]
     });
+  }
+
+  /** Solo ADMIN y MEDICO escriben (la secretaria consulta). */
+  get puedeEscribir(): boolean {
+    return this.auth.tieneRol(['ADMIN', 'MEDICO']);
+  }
+
+  /** Médicos entre los que se puede firmar: un MEDICO solo se ofrece a sí mismo. */
+  get medicosDisponibles(): Medico[] {
+    const propio = this.auth.obtenerUsuario()?.medicoId;
+    return this.auth.obtenerRol() === 'MEDICO' && propio ? this.medicos.filter((m) => m.id === propio) : this.medicos;
+  }
+
+  /** Id del médico autenticado (solo si el usuario es MEDICO). */
+  private get medicoPropioId(): number | null {
+    return this.auth.obtenerRol() === 'MEDICO' ? (this.auth.obtenerUsuario()?.medicoId ?? null) : null;
   }
 
   /**
@@ -451,7 +469,7 @@ export class HistoriaMedicaComponent {
    */
   abrirFormAnotacion() {
     this.formAnotacion.reset({
-      medicoId: this.historiaVer?.cita?.medico?.id ?? null,
+      medicoId: this.medicoPropioId ?? this.historiaVer?.cita?.medico?.id ?? null,
       descripcion: '',
       observacion: '',
       diagnostico: ''

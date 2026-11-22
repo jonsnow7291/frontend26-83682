@@ -18,4 +18,8 @@ export class Medico {
     registroProfesional?: string;
     /** Identificador de la especialización. */
     especializacionId?: number;
+    /** Usuario de acceso asociado (opcional). */
+    usuarioId?: number;
+    /** Indica si el veterinario está activo. */
+    activo?: boolean;
 }

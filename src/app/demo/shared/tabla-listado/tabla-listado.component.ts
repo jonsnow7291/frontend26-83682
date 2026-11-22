@@ -34,6 +34,18 @@ export function soloFecha(valor?: Date | string | null): string {
  * Tabla reutilizable con buscador y paginacion. Los filtros propios de cada modulo
  * se proyectan dentro del encabezado con el selector [filtros].
  */
+/** Botón de fila (p. ej. Editar, Inactivar) que se muestra en una columna "Acciones". */
+export interface Accion {
+  /** Texto del botón (puede depender del registro). */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  texto: string | ((item: any) => string);
+  /** Clase de Bootstrap del botón (por defecto outline-primary). */
+  clase?: string;
+  /** Qué hacer al pulsarlo. */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  ejecutar: (item: any) => void;
+}
+
 @Component({
   selector: 'app-tabla-listado',
   imports: [CommonModule],
@@ -48,6 +60,8 @@ export class TablaListadoComponent {
    * Columnas a mostrar.
    */
   @Input() columnas: Columna[] = [];
+  /** Botones por fila; si hay alguno se agrega la columna "Acciones". */
+  @Input() acciones: Accion[] = [];
   /** Registros a mostrar. */
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   @Input() items: any[] = [];
@@ -104,6 +118,11 @@ export class TablaListadoComponent {
    * Actualiza el texto de búsqueda y vuelve a la primera página.
    * @param event evento del campo de búsqueda.
    */
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  textoAccion(a: Accion, item: any): string {
+    return typeof a.texto === 'function' ? a.texto(item) : a.texto;
+  }
+
   actualizarBusqueda(event: Event) {
     this.terminoBusqueda = (event.target as HTMLInputElement).value;
     this.paginaActual = 1;

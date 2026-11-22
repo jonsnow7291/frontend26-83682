@@ -16,6 +16,7 @@ export class Cita {
     medico?: Medico;
     /** Fecha y hora de la cita. */
     fechaHora?: Date;
+    fechaHoraFin?: Date;
     /** Estado (Pendiente, Programada, Confirmada, Atendida, Cancelada). */
     estado?: string;
     /** Motivo de la consulta. */

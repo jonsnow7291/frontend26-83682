@@ -35,4 +35,14 @@ export class ClienteService {
     const params = new HttpParams().set('clienteId', clienteId);
     return this.backendService.get(environment.apiUrlAuth, this.api, "consultar", params);
   }
+
+  /** Registra un nuevo registro (validado por el backend). */
+  guardar(datos: Record<string, unknown>): Observable<Cliente> {
+    return this.backendService.post(environment.apiUrlAuth, this.api, 'guardar', datos);
+  }
+
+  /** Actualiza un registro existente. */
+  actualizar(datos: Record<string, unknown>): Observable<Cliente> {
+    return this.backendService.put(environment.apiUrlAuth, this.api, 'actualizar', datos);
+  }
 }

@@ -1,1 +1,18 @@
-<app-tabla-listado [titulo]="titulo" [columnas]="columnas" [items]="items"></app-tabla-listado>
+<app-tabla-listado [titulo]="titulo" [columnas]="columnas" [items]="items" [acciones]="acciones">
+  <button botones type="button" class="btn btn-primary" (click)="nuevo()">Nuevo usuario</button>
+</app-tabla-listado>
+
+<div class="modal fade" id="modalUsuario" tabindex="-1" aria-hidden="true">
+  <div class="modal-dialog"><div class="modal-content">
+    <div class="modal-header"><h5 class="modal-title">{{ titleModal }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
+    <div class="modal-body"><div class="row g-3">
+      <div class="col-md-6"><label class="form-label">Usuario *</label><input class="form-control" maxlength="50" autocomplete="off" [(ngModel)]="form.username" [disabled]="!!form.id"></div>
+      <div class="col-md-6"><label class="form-label">Rol *</label>
+        <select class="form-select" [(ngModel)]="form.rol"><option *ngFor="let r of roles" [value]="r">{{ r }}</option></select></div>
+      <div class="col-12"><label class="form-label">Correo *</label><input type="email" class="form-control" maxlength="150" autocomplete="off" [(ngModel)]="form.email"></div>
+      <div class="col-12"><label class="form-label">{{ form.id ? 'Nueva contraseña (opcional)' : 'Contraseña *' }}</label>
+        <input type="password" class="form-control" maxlength="72" autocomplete="new-password" [(ngModel)]="form.password"><div class="form-text">Mínimo 8 caracteres.</div></div>
+    </div></div>
+    <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-primary" (click)="guardar()">Guardar</button></div>
+  </div></div>
+</div>

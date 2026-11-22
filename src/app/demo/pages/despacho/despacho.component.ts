@@ -4,7 +4,9 @@ import { FormsModule } from '@angular/forms';
 import Swal from 'sweetalert2';
 import { Modal } from 'bootstrap';
 
-import { AsignacionLote, DespachoDetalle, DespachoResumen, EstadoLog } from 'src/app/models/despacho';
+import { AsignacionLote, DespachoDetalle, DespachoResumen, EstadoLog, MovimientoDespacho } from 'src/app/models/despacho';
+import { Inventario } from 'src/app/models/inventario';
+import { InventarioService } from '../inventario/service/inventario.service';
 import { DespachoService } from './service/despacho.service';
 import { abrirPdf } from 'src/app/utils/descarga';
 
@@ -20,7 +22,11 @@ import { abrirPdf } from 'src/app/utils/descarga';
   templateUrl: './despacho.component.html'
 })
 export class DespachoComponent {
-  pestana: 'pendientes' | 'historial' = 'pendientes';
+  pestana: 'pendientes' | 'historial' | 'medicamento' = 'pendientes';
+  /** Pestaña "Por medicamento" (requisito 5.6): catálogo, selección y movimientos de entrega. */
+  medicamentos: Inventario[] = [];
+  medicamentoId: number | null = null;
+  movimientos: MovimientoDespacho[] = [];
   lista: DespachoResumen[] = [];
   cargando = false;
   busqueda = '';
@@ -36,14 +42,39 @@ export class DespachoComponent {
   procesando = false;
   private modalDetalle: Modal | null = null;
 
-  constructor(private readonly servicio: DespachoService) {
+  constructor(private readonly servicio: DespachoService, private readonly inventario: InventarioService) {
     this.listar();
   }
 
-  cambiarPestana(p: 'pendientes' | 'historial') { this.pestana = p; this.listar(); }
+  cambiarPestana(p: 'pendientes' | 'historial' | 'medicamento') {
+    this.pestana = p;
+    if (p === 'medicamento') { this.cargarMedicamentos(); return; }
+    this.listar();
+  }
+
+  /** Carga el catálogo (una vez) para elegir el medicamento cuyo historial se consulta. */
+  cargarMedicamentos() {
+    if (this.medicamentos.length > 0) { return; }
+    this.inventario.listar().subscribe({
+      next: (d) => this.medicamentos = d.filter((m) => m.tipo !== 'UTENSILIO'),
+      error: (e) => Swal.fire('Error', e?.error?.message ?? 'No se pudo cargar el catálogo', 'error')
+    });
+  }
+
+  /** Historial de entregas y reversiones del medicamento elegido. */
+  consultarMedicamento() {
+    this.movimientos = [];
+    if (!this.medicamentoId) { return; }
+    this.cargando = true;
+    this.servicio.historialMedicamento(this.medicamentoId).subscribe({
+      next: (m) => { this.movimientos = m; this.cargando = false; },
+      error: (e) => { this.cargando = false; Swal.fire('Error', e?.error?.message ?? 'No se pudo cargar el historial', 'error'); }
+    });
+  }
 
   listar() {
     this.cargando = true;
+    if (this.pestana === 'medicamento') { return; }
     const origen = this.pestana === 'pendientes' ? this.servicio.pendientes(this.busqueda.trim(), this.fecha) : this.servicio.historial();
     origen.subscribe({
       next: (d) => { this.lista = d; this.cargando = false; },

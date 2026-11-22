@@ -5,16 +5,42 @@
       <div class="btn-group">
         <button class="btn" [ngClass]="pestana === 'pendientes' ? 'btn-primary' : 'btn-outline-primary'" (click)="cambiarPestana('pendientes')">Pendientes</button>
         <button class="btn" [ngClass]="pestana === 'historial' ? 'btn-primary' : 'btn-outline-primary'" (click)="cambiarPestana('historial')">Historial</button>
+        <button class="btn" [ngClass]="pestana === 'medicamento' ? 'btn-primary' : 'btn-outline-primary'" (click)="cambiarPestana('medicamento')">Por medicamento</button>
       </div>
     </div>
     <div class="card-body">
+      <div *ngIf="pestana === 'medicamento'">
+        <div class="row g-2 mb-3">
+          <div class="col-md-6">
+            <select class="form-select" [(ngModel)]="medicamentoId" (ngModelChange)="consultarMedicamento()">
+              <option [ngValue]="null">-- Seleccione un medicamento --</option>
+              <option *ngFor="let m of medicamentos" [ngValue]="m.id">{{ m.codigo }} · {{ m.nombre }}</option>
+            </select>
+          </div>
+        </div>
+        <div *ngIf="cargando" class="text-center text-muted py-2">Cargando...</div>
+        <div class="table-responsive">
+          <table class="table table-striped align-middle">
+            <thead class="table-light"><tr><th>Fecha</th><th>Tipo</th><th class="text-end">Cantidad</th><th>Lote</th><th>Despacho</th><th>Fórmula</th><th>Motivo</th></tr></thead>
+            <tbody>
+              <tr *ngIf="!cargando && !medicamentoId"><td colspan="7" class="text-center text-muted">Elija un medicamento para ver sus entregas</td></tr>
+              <tr *ngIf="!cargando && medicamentoId && movimientos.length === 0"><td colspan="7" class="text-center text-muted">Este medicamento no tiene entregas registradas</td></tr>
+              <tr *ngFor="let m of movimientos">
+                <td>{{ m.fecha | date:'yyyy-MM-dd HH:mm' }}</td>
+                <td><span class="badge" [ngClass]="m.tipo === 'SALIDA' ? 'bg-primary' : 'bg-secondary'">{{ m.tipo }}</span></td>
+                <td class="text-end">{{ m.cantidad }}</td><td>{{ m.lote }}</td><td>#{{ m.despachoId }}</td><td>#{{ m.formulaId }}</td><td>{{ m.motivo }}</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
       <div class="row g-2 mb-3" *ngIf="pestana === 'pendientes'">
         <div class="col-md-5"><input class="form-control" placeholder="Buscar por n.º de fórmula, propietario o mascota" [(ngModel)]="busqueda" (keyup.enter)="listar()"></div>
         <div class="col-md-3"><input type="date" class="form-control" [(ngModel)]="fecha" (change)="listar()"></div>
         <div class="col-md-2"><button class="btn btn-outline-primary w-100" (click)="listar()">Buscar</button></div>
       </div>
-      <div *ngIf="cargando" class="text-center text-muted py-2">Cargando...</div>
-      <div class="table-responsive">
+      <div *ngIf="cargando && pestana !== 'medicamento'" class="text-center text-muted py-2">Cargando...</div>
+      <div class="table-responsive" *ngIf="pestana !== 'medicamento'">
         <table class="table table-striped table-hover align-middle">
           <thead class="table-light"><tr><th>Fórmula</th><th>Fecha</th><th>Veterinario</th><th>Propietario</th><th>Mascota</th><th class="text-center">Ítems</th><th class="text-center">Estado</th><th></th></tr></thead>
           <tbody>

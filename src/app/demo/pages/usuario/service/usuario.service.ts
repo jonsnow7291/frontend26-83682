@@ -1,4 +1,5 @@
 import { Injectable } from '@angular/core';
+import { HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Usuario } from 'src/app/models/usuario';
 import { BackendService } from 'src/app/services/backend.service';
@@ -23,5 +24,20 @@ export class UsuarioService {
    */
   getUsuarios(): Observable<Usuario[]> {
     return this.backendService.get(environment.apiUrlAuth, this.api, "listar-todos");
+  }
+
+  /** Registra un nuevo registro (validado por el backend). */
+  guardar(datos: Record<string, unknown>): Observable<Usuario> {
+    return this.backendService.post(environment.apiUrlAuth, this.api, 'guardar', datos);
+  }
+
+  /** Actualiza un registro existente. */
+  actualizar(datos: Record<string, unknown>): Observable<Usuario> {
+    return this.backendService.put(environment.apiUrlAuth, this.api, 'actualizar', datos);
+  }
+
+  /** Activa o inactiva un registro. */
+  cambiarEstado(id: number, activo: boolean): Observable<Usuario> {
+    return this.backendService.patch(environment.apiUrlAuth, this.api, 'estado', null, new HttpParams().set('id', id).set('activo', activo));
   }
 }
