@@ -34,9 +34,14 @@ export class NavContentComponent {
   constructor() {
     // Menú dinámico: cada perfil ve solo los módulos que le corresponden.
     this.authService.usuario$.subscribe(() => {
+      const visible = (i: NavigationItem) => !i.roles?.length || this.authService.tieneRol(i.roles);
       this.navigations = NavigationItems.map((grupo) => ({
         ...grupo,
-        children: (grupo.children ?? []).filter((i) => !i.roles?.length || this.authService.tieneRol(i.roles))
+        children: (grupo.children ?? [])
+          .filter(visible)
+          .map((i) => (i.type === 'collapse' ? { ...i, children: (i.children ?? []).filter(visible) } : i))
+          // Un grupo sin ningún módulo visible para el perfil no se muestra.
+          .filter((i) => i.type !== 'collapse' || i.children.length)
       }));
     });
   }

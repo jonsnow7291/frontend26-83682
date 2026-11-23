@@ -3,15 +3,27 @@
 </app-tabla-listado>
 
 <div class="modal fade" id="modalUsuario" tabindex="-1" aria-hidden="true">
-  <div class="modal-dialog"><div class="modal-content">
+  <div class="modal-dialog modal-lg"><div class="modal-content">
     <div class="modal-header"><h5 class="modal-title">{{ titleModal }}</h5><button type="button" class="btn-close" data-bs-dismiss="modal"></button></div>
     <div class="modal-body"><div class="row g-3">
-      <div class="col-md-6"><label class="form-label">Usuario *</label><input class="form-control" maxlength="50" autocomplete="off" [(ngModel)]="form.username" [disabled]="!!form.id"></div>
+      <div class="col-md-6"><label class="form-label">Usuario *</label><input class="form-control" maxlength="50" autocomplete="off" [(ngModel)]="form.username"></div>
       <div class="col-md-6"><label class="form-label">Rol *</label>
         <select class="form-select" [(ngModel)]="form.rol"><option *ngFor="let r of roles" [value]="r">{{ r }}</option></select></div>
       <div class="col-12"><label class="form-label">Correo *</label><input type="email" class="form-control" maxlength="150" autocomplete="off" [(ngModel)]="form.email"></div>
       <div class="col-12"><label class="form-label">{{ form.id ? 'Nueva contraseña (opcional)' : 'Contraseña *' }}</label>
         <input type="password" class="form-control" maxlength="72" autocomplete="new-password" [(ngModel)]="form.password"><div class="form-text">Mínimo 8 caracteres.</div></div>
+      <ng-container *ngIf="form.rol === 'MEDICO'">
+        <div class="col-12"><hr class="my-1"><h6 class="mb-0">Datos profesionales del médico</h6></div>
+        <div class="col-md-3"><label class="form-label">Tipo documento *</label>
+          <select class="form-select" [(ngModel)]="medico.tipoDocumento"><option>CC</option><option>CE</option><option>TI</option><option>PA</option><option>NIT</option></select></div>
+        <div class="col-md-5"><label class="form-label">Número de documento *</label><input class="form-control" maxlength="20" [(ngModel)]="medico.numeroDocumento"></div>
+        <div class="col-md-4"><label class="form-label">Teléfono</label><input class="form-control" maxlength="20" [(ngModel)]="medico.telefono"></div>
+        <div class="col-md-6"><label class="form-label">Nombres *</label><input class="form-control" maxlength="100" [(ngModel)]="medico.nombres"></div>
+        <div class="col-md-6"><label class="form-label">Apellidos *</label><input class="form-control" maxlength="100" [(ngModel)]="medico.apellidos"></div>
+        <div class="col-md-6"><label class="form-label">Registro profesional *</label><input class="form-control" maxlength="50" [(ngModel)]="medico.registroProfesional"></div>
+        <div class="col-md-6"><label class="form-label">Especialidad *</label>
+          <select class="form-select" [(ngModel)]="medico.especializacionId"><option [ngValue]="undefined">-- Seleccione --</option><option *ngFor="let e of especializaciones" [ngValue]="e.id">{{ e.nombre }}</option></select></div>
+      </ng-container>
     </div></div>
     <div class="modal-footer"><button class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button><button class="btn btn-primary" (click)="guardar()">Guardar</button></div>
   </div></div>
