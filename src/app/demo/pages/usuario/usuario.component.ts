@@ -47,7 +47,8 @@ export class UsuarioComponent {
 
   acciones: Accion[] = [
     { texto: 'Editar', ejecutar: (u: Usuario) => this.editar(u) },
-    { texto: (u: Usuario) => u.activo ? 'Inactivar' : 'Activar', clase: 'btn-outline-warning', ejecutar: (u: Usuario) => this.cambiarEstado(u) }
+    { texto: (u: Usuario) => u.activo ? 'Inactivar' : 'Activar', clase: 'btn-outline-warning', ejecutar: (u: Usuario) => this.cambiarEstado(u) },
+    { texto: 'Eliminar', clase: 'btn-outline-danger', ejecutar: (u: Usuario) => this.eliminar(u) }
   ];
 
   constructor(private readonly servicio: UsuarioService,
@@ -107,6 +108,27 @@ export class UsuarioComponent {
       this.servicio.cambiarEstado(u.id!, activar).subscribe({
         next: () => this.listar(),
         error: (e) => Swal.fire('No se pudo cambiar el estado', e?.error?.message ?? 'Error inesperado', 'error')
+      });
+    });
+  }
+
+  /** Elimina un usuario tras confirmar. */
+  eliminar(u: Usuario) {
+    Swal.fire({
+      title: `¿Eliminar a "${u.username}"?`,
+      text: 'Esta acción no se puede deshacer y también se eliminará su registro de médico asociado si existe.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    }).then((r) => {
+      if (!r.isConfirmed) { return; }
+      this.servicio.eliminar(u.id!).subscribe({
+        next: () => {
+          Swal.fire('Eliminado', 'Usuario eliminado exitosamente', 'success');
+          this.listar();
+        },
+        error: (e) => Swal.fire('No se pudo eliminar', e?.error?.message ?? 'Error inesperado', 'error')
       });
     });
   }
