@@ -45,6 +45,6 @@ export class UsuarioService {
   /** Elimina un registro. */
   eliminar(id: number): Observable<Respuesta> {
     const params = new HttpParams().set('id', id);
-    return this.backendService.delete(environment.apiUrlAuth, this.api, 'eliminar', null, params);
+    return this.backendService.delete(environment.apiUrlAuth, this.api, 'eliminar', params);
   }
 }
