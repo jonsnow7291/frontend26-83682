@@ -34,6 +34,8 @@ export class FormulaMedicaComponent {
   cargando = false;
   citaFiltro: number | null = null;
   readonly esMedico: boolean;
+  /** Clave para guardar en sessionStorage el formular en curso. */
+  private readonly SESSION_KEY = 'formula_form_edicion';
 
   // formulario
   titleModal = '';
@@ -95,6 +97,51 @@ export class FormulaMedicaComponent {
   }
 
   // ----- alta / edición -----
+  /**
+   * Guarda el estado del formular de fórmulas en sessionStorage para no perderlo
+   * si el usuario navega hacia otros módulos y vuelve.
+   */
+  guardarEstadoFormular() {
+    sessionStorage.setItem(this.SESSION_KEY, JSON.stringify({
+      formulaId: this.formulaId ?? null,
+      clienteId: this.clienteId,
+      mascotaId: this.mascotaId,
+      citaId: this.citaId,
+      indicaciones: this.indicaciones,
+      lineas: this.lineas
+    }));
+  }
+
+  /**
+   * Restaura el formular de fórmulas desde sessionStorage si existe un borrador.
+   */
+  private recuperarEstadoFormular() {
+    const raw = sessionStorage.getItem(this.SESSION_KEY);
+    if (!raw) {
+      return;
+    }
+    try {
+      const estado = JSON.parse(raw);
+      this.formulaId = estado.formulaId ?? undefined;
+      this.clienteId = estado.clienteId ?? null;
+      this.indicaciones = estado.indicaciones ?? '';
+      if (estado.mascotaId) { this.cargarCitas(estado.mascotaId); }
+      if (estado.lineas?.length) {
+        this.lineas = estado.lineas.map((l: any) => ({
+          medicamentoId: l.medicamentoId ?? null, dosis: l.dosis ?? '', frecuencia: l.frecuencia ?? '',
+          duracionDias: l.duracionDias ?? null, viaAdministracion: l.viaAdministracion ?? '',
+          indicaciones: l.indicaciones ?? '', cantidadPrescrita: l.cantidadPrescrita ?? null
+        }));
+      } else {
+        this.lineas = [this.lineaVacia()];
+      }
+      setTimeout(() => this.cargarMascotas(estado.clienteId), 300);
+    } catch {
+      sessionStorage.removeItem(this.SESSION_KEY);
+      this.lineas = [this.lineaVacia()];
+    }
+  }
+
   nueva() {
     this.formulaId = undefined;
     this.indicaciones = '';
@@ -106,6 +153,7 @@ export class FormulaMedicaComponent {
       this.citaId = this.citaFiltro;
       this.calendario.consultar(this.citaFiltro).subscribe((c) => this.citaFija = c);
     }
+    this.recuperarEstadoFormular();
     this.abrir('modalFormula', (m) => this.modalForm = m);
   }
 
@@ -126,11 +174,25 @@ export class FormulaMedicaComponent {
   alCambiarCliente() {
     this.mascotaId = null; this.citaId = null; this.mascotas = []; this.citas = [];
     if (this.clienteId) { this.mascotaService.buscarPorCliente(this.clienteId).subscribe({ next: (m) => this.mascotas = m, error: () => this.mascotas = [] }); }
+    this.guardarEstadoFormular();
   }
 
   alCambiarMascota() {
     this.citaId = null; this.citas = [];
     if (this.mascotaId) { this.citaService.listarAtendidasPorMascota(this.mascotaId).subscribe({ next: (c) => this.citas = c, error: () => this.citas = [] }); }
+    this.guardarEstadoFormular();
+  }
+
+  private cargarMascotas(clienteId: number | null) {
+    this.mascotas = [];
+    if (!clienteId) { return; }
+    this.mascotaService.buscarPorCliente(clienteId).subscribe({ next: (m) => this.mascotas = m, error: () => this.mascotas = [] });
+  }
+
+  private cargarCitas(mascotaId: number | null) {
+    this.citas = [];
+    if (!mascotaId) { return; }
+    this.citaService.listarAtendidasPorMascota(mascotaId).subscribe({ next: (c) => this.citas = c, error: () => this.citas = [] });
   }
 
   agregarLinea() { this.lineas.push(this.lineaVacia()); }
@@ -175,10 +237,24 @@ export class FormulaMedicaComponent {
     };
     this.guardando = true;
     (this.formulaId ? this.servicio.actualizarFormula(rq) : this.servicio.guardarFormula(rq)).subscribe({
-      next: (r) => { this.guardando = false; this.modalForm?.hide(); Swal.fire('Éxito', r.message ?? 'Fórmula guardada', 'success'); this.listar(); },
-      error: (e) => { this.guardando = false; Swal.fire('No se pudo guardar', e?.error?.message ?? 'Error inesperado', 'error'); }
+      next: (r) => {
+        this.guardando = false;
+        sessionStorage.removeItem(this.SESSION_KEY);
+        this.modalForm?.hide();
+        Swal.fire('Éxito', r.message ?? 'Fórmula guardada', 'success');
+        this.listar();
+      },
+      error: (e) => {
+        this.guardando = false;
+        Swal.fire('No se pudo guardar', e?.error?.message ?? 'Error inesperado', 'error');
+      }
     });
   }
+
+  /**
+   * Guarda el estado del formular al cambiar cliente/mascota para no perderlo.
+   */
+  private guardarEstadoFormularSeguro() { this.guardarEstadoFormular(); }
 
   // ----- confirmar / ver / pdf -----
   confirmar(f: FormulaMedica) {

@@ -37,6 +37,8 @@ import { TablaDatos, tiempo, nombreCompleto, mensajeError, badgeEstadoCita } fro
 export class HistoriaMedicaComponent {
   /** Instancia del modal del formulario de historia. */
   modalFormulario: Modal | null = null;
+  /** Clave para guardar en sessionStorage el formulario en curso. */
+  private readonly SESSION_KEY = 'historia_form_edicion';
   /** Instancia del modal "Ver" (detalle e historial). */
   modalHistorial: Modal | null = null;
 
@@ -279,6 +281,7 @@ export class HistoriaMedicaComponent {
     this.form.patchValue({ mascotaId: null, citaId: null });
     this.citas = [];
     this.cargarMascotas(clienteId);
+    this.guardarEstadoFormular();
   }
 
   /**
@@ -287,6 +290,53 @@ export class HistoriaMedicaComponent {
   onMascotaChange(mascotaId: number | null) {
     this.form.patchValue({ citaId: null });
     this.cargarCitas(mascotaId);
+    this.guardarEstadoFormular();
+  }
+
+  /**
+   * Guarda el formulario en sessionStorage para no perderlo si el usuario navega.
+   */
+  guardarEstadoFormular() {
+    sessionStorage.setItem(this.SESSION_KEY, JSON.stringify({
+      clienteId: this.form.value.clienteId,
+      mascotaId: this.form.value.mascotaId,
+      citaId: this.form.value.citaId,
+      diagnostico: this.form.value.diagnostico,
+      observaciones: this.form.value.observaciones,
+      historiaId: this.historiaSeleccionada?.id ?? null
+    }));
+  }
+
+  /**
+   * Restaura el formulario desde sessionStorage si existe un borrador guardado.
+   */
+  private recuperarEstadoFormular() {
+    const raw = sessionStorage.getItem(this.SESSION_KEY);
+    if (!raw) {
+      return;
+    }
+    try {
+      const estado = JSON.parse(raw) as Partial<HistoriaMedicaRq>;
+      if (estado.historiaId) {
+        this.historiaSeleccionada = this.items.find((h) => h.id === estado.historiaId) ?? null;
+      }
+      if (estado.clienteId) {
+        this.cargarMascotas(estado.clienteId);
+      }
+      if (estado.mascotaId) {
+        this.cargarCitas(estado.mascotaId);
+      }
+      setTimeout(() => this.form.patchValue({
+        clienteId: estado.clienteId ?? null,
+        mascotaId: estado.mascotaId ?? null,
+        citaId: estado.citaId ?? null,
+        diagnostico: estado.diagnostico ?? '',
+        observaciones: estado.observaciones ?? ''
+      }), 300);
+    } catch {
+      // Si el JSON está corrupto, se restablece el formulario.
+      sessionStorage.removeItem(this.SESSION_KEY);
+    }
   }
 
   /**
@@ -297,6 +347,7 @@ export class HistoriaMedicaComponent {
     this.resetFormulario();
     this.mascotas = [];
     this.citas = [];
+    this.recuperarEstadoFormular();
     this.abrirModal('C');
   }
 
@@ -345,6 +396,7 @@ export class HistoriaMedicaComponent {
    * Cierra el modal del formulario y reinicia el estado.
    */
   cerrarModal() {
+    this.guardarEstadoFormular();
     this.modalFormulario?.hide();
     this.resetFormulario();
     this.historiaSeleccionada = null;
@@ -376,7 +428,10 @@ export class HistoriaMedicaComponent {
 
     this.guardando = true;
     peticion
-      .pipe(finalize(() => this.guardando = false))
+      .pipe(finalize(() => {
+        this.guardando = false;
+        sessionStorage.removeItem(this.SESSION_KEY);
+      }))
       .subscribe({
         next: (respuesta) => {
           Swal.fire('Éxito', respuesta.message ?? 'Operación exitosa', 'success');
@@ -385,6 +440,20 @@ export class HistoriaMedicaComponent {
         },
         error: (error) => Swal.fire('Error', mensajeError(error, 'No fue posible completar la operación'), 'error')
       });
+  }
+
+  /**
+   * Guarda el formulario en sessionStorage para no perderlo si el usuario navega.
+   */
+  private guardarEstadoFormular() {
+    sessionStorage.setItem(this.SESSION_KEY, JSON.stringify({
+      historiaId: this.historiaSeleccionada?.id ?? null,
+      clienteId: this.form.value.clienteId,
+      mascotaId: this.form.value.mascotaId,
+      citaId: this.form.value.citaId,
+      diagnostico: this.form.value.diagnostico,
+      observaciones: this.form.value.observaciones
+    }));
   }
 
   /**
