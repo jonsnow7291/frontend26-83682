@@ -39,7 +39,8 @@ export class MedicoComponent {
   acciones: Accion[] = [
     { texto: 'Editar', ejecutar: (m: Medico) => this.editar(m) },
     { texto: (m: Medico) => m.activo === false ? 'Activar' : 'Inactivar', clase: 'btn-outline-warning', ejecutar: (m: Medico) => this.cambiarEstado(m) },
-    { texto: 'Crear acceso', clase: 'btn-outline-success', ejecutar: (m: Medico) => this.crearAcceso(m) }
+    { texto: 'Crear acceso', clase: 'btn-outline-success', ejecutar: (m: Medico) => this.crearAcceso(m) },
+    { texto: 'Eliminar', clase: 'btn-outline-danger', ejecutar: (m: Medico) => this.eliminarMedico(m) }
   ];
 
   constructor(private readonly medicoService: MedicoService,
@@ -115,6 +116,27 @@ export class MedicoComponent {
           this.listar();
         },
         error: (e) => Swal.fire('No se pudo crear', e?.error?.message ?? 'Error inesperado', 'error')
+      });
+    });
+  }
+
+  /** Elimina un médico tras confirmar. */
+  eliminarMedico(m: Medico) {
+    Swal.fire({
+      title: `¿Eliminar a ${m.nombres} ${m.apellidos}?`,
+      text: 'Esta acción no se puede deshacer. Si tiene usuario asociado, también se eliminará la cuenta.',
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, eliminar',
+      cancelButtonText: 'Cancelar'
+    }).then((r) => {
+      if (!r.isConfirmed) { return; }
+      this.medicoService.eliminar(m.id!).subscribe({
+        next: (respuesta) => {
+          Swal.fire('Éxito', respuesta.message ?? 'Médico eliminado', 'success');
+          this.listar();
+        },
+        error: (e) => Swal.fire('No se pudo eliminar', e?.error?.message ?? 'Error inesperado', 'error')
       });
     });
   }

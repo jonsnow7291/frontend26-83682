@@ -47,4 +47,10 @@ export class MedicoService {
     const params = new HttpParams().set('id', id);
     return this.backendService.post(environment.apiUrlAuth, this.api, 'crear-acceso', null, params);
   }
+
+  /** Elimina un médico (y su usuario asociado si existe). */
+  eliminar(id: number): Observable<Respuesta> {
+    const params = new HttpParams().set('id', id);
+    return this.backendService.delete(environment.apiUrlAuth, this.api, 'eliminar', params);
+  }
 }
