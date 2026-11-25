@@ -161,6 +161,9 @@ export class CalendarioComponent {
   /** True si el día está expandido. */
   expandido(d: Date): boolean { return !!this.expandidos[dia(d)]; }
 
+  /** Ir a la vista del día mostrando el día origen desde el calendario mensu. */
+  irAvistaDia(d: Date) { this.referencia = d; this.vista = 'dia'; this.cargar(); }
+
   claseEstado(estado: string): string {
     return this.estados.find((e) => e.valor === estado)?.clase ?? 'bg-secondary';
   }

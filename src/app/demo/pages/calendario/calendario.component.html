@@ -35,9 +35,12 @@
               <td *ngFor="let d of dias.slice(semana * 7, semana * 7 + 7)" style="height: 110px; vertical-align: top; cursor: pointer;"
                   [ngClass]="{ 'bg-light text-muted': esOtroMes(d), 'border-primary': esHoy(d) }" (dblclick)="nueva(d)">
                 <div class="small fw-bold" [ngClass]="{ 'text-primary': esHoy(d) }">{{ d.getDate() }}</div>
-                <div *ngFor="let c of citasDelDia(d)" class="badge {{ claseEstado(c.estado) }} d-block text-start text-truncate mb-1" (click)="abrir(c); $event.stopPropagation()">
+                <div *ngFor="let c of citasMostrar(d)" class="badge {{ claseEstado(c.estado) }} d-block text-start text-truncate mb-1" (click)="abrir(c); $event.stopPropagation()">
                   {{ hora(c.inicio) }} {{ c.mascota }}
                 </div>
+                <button *ngIf="citasOcultas(d) > 0" class="btn btn-link btn-sm px-0 mt-1 d-inline-flex align-items-center" (click)="irAvistaDia(d)">
+                  Ver más ({{ citasOcultas(d) }}) → día
+                </button>
               </td>
             </tr>
           </tbody>
