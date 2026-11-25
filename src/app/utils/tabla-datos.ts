@@ -67,6 +67,11 @@ export class TablaDatos<T> {
     this.recalcular();
   }
 
+  /** Registros completos recibidos del backend. */
+  getItems(): T[] {
+    return this.items;
+  }
+
   /**
    * Aplica un nuevo texto de búsqueda y vuelve a la primera página.
    * @param termino texto a buscar.

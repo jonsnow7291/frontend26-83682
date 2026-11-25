@@ -318,7 +318,7 @@ export class HistoriaMedicaComponent {
     try {
       const estado = JSON.parse(raw) as Partial<HistoriaMedicaRq>;
       if (estado.historiaId) {
-        this.historiaSeleccionada = this.items.find((h) => h.id === estado.historiaId) ?? null;
+        this.historiaSeleccionada = this.tabla.getItems().find((h) => h.id === estado.historiaId) ?? null;
       }
       if (estado.clienteId) {
         this.cargarMascotas(estado.clienteId);
@@ -440,20 +440,6 @@ export class HistoriaMedicaComponent {
         },
         error: (error) => Swal.fire('Error', mensajeError(error, 'No fue posible completar la operación'), 'error')
       });
-  }
-
-  /**
-   * Guarda el formulario en sessionStorage para no perderlo si el usuario navega.
-   */
-  private guardarEstadoFormular() {
-    sessionStorage.setItem(this.SESSION_KEY, JSON.stringify({
-      historiaId: this.historiaSeleccionada?.id ?? null,
-      clienteId: this.form.value.clienteId,
-      mascotaId: this.form.value.mascotaId,
-      citaId: this.form.value.citaId,
-      diagnostico: this.form.value.diagnostico,
-      observaciones: this.form.value.observaciones
-    }));
   }
 
   /**
