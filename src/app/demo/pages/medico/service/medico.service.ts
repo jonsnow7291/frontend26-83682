@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { HttpParams } from '@angular/common/http';
 import { Observable } from 'rxjs';
 import { Medico } from 'src/app/models/medico';
+import { Respuesta } from 'src/app/models/respuesta';
 import { BackendService } from 'src/app/services/backend.service';
 import { environment } from 'src/environments/environment';
 
@@ -39,5 +40,11 @@ export class MedicoService {
   /** Activa o inactiva un registro. */
   cambiarEstado(id: number, activo: boolean): Observable<Medico> {
     return this.backendService.patch(environment.apiUrlAuth, this.api, 'estado', null, new HttpParams().set('id', id).set('activo', activo));
+  }
+
+  /** Crea una cuenta de acceso para un médico que no tenga usuario. */
+  crearAcceso(id: number): Observable<Respuesta> {
+    const params = new HttpParams().set('id', id);
+    return this.backendService.post(environment.apiUrlAuth, this.api, 'crear-acceso', null, params);
   }
 }

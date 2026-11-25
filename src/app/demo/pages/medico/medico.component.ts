@@ -38,7 +38,8 @@ export class MedicoComponent {
 
   acciones: Accion[] = [
     { texto: 'Editar', ejecutar: (m: Medico) => this.editar(m) },
-    { texto: (m: Medico) => m.activo === false ? 'Activar' : 'Inactivar', clase: 'btn-outline-warning', ejecutar: (m: Medico) => this.cambiarEstado(m) }
+    { texto: (m: Medico) => m.activo === false ? 'Activar' : 'Inactivar', clase: 'btn-outline-warning', ejecutar: (m: Medico) => this.cambiarEstado(m) },
+    { texto: 'Crear acceso', clase: 'btn-outline-success', ejecutar: (m: Medico) => this.crearAcceso(m) }
   ];
 
   constructor(private readonly medicoService: MedicoService,
@@ -90,6 +91,30 @@ export class MedicoComponent {
       this.medicoService.cambiarEstado(m.id!, activar).subscribe({
         next: () => this.listar(),
         error: (e) => Swal.fire('No se pudo cambiar el estado', e?.error?.message ?? 'Error inesperado', 'error')
+      });
+    });
+  }
+
+  /** Crea una cuenta de acceso para un médico que no tenga usuario asociado. */
+  crearAcceso(m: Medico) {
+    if (m.usuarioId) {
+      Swal.fire('Atención', 'Este médico ya tiene una cuenta de acceso asociada', 'info');
+      return;
+    }
+    Swal.fire({
+      title: `¿Crear acceso para ${m.nombres} ${m.apellidos}?`,
+      text: 'Se creará un usuario con su número de documento y contraseña temporal Medico123!.',
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Sí, crear acceso'
+    }).then((r) => {
+      if (!r.isConfirmed) { return; }
+      this.medicoService.crearAcceso(m.id!).subscribe({
+        next: (respuesta) => {
+          Swal.fire('Éxito', respuesta.message ?? 'Acceso creado', 'success');
+          this.listar();
+        },
+        error: (e) => Swal.fire('No se pudo crear', e?.error?.message ?? 'Error inesperado', 'error')
       });
     });
   }
