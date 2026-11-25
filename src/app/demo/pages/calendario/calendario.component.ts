@@ -87,6 +87,8 @@ export class CalendarioComponent {
   // ----- navegación -----
   cambiarVista(v: 'dia' | 'semana' | 'mes') { this.vista = v; this.cargar(); }
   hoy() { this.referencia = new Date(); this.cargar(); }
+  /** Mínimo de los selectores de fecha/hora: hoy a las 00:00 (se admite cualquier hora del día de hoy). */
+  get minimoHoy(): string { return dia(new Date()) + 'T00:00'; }
   mover(paso: number) {
     const d = new Date(this.referencia);
     if (this.vista === 'dia') { d.setDate(d.getDate() + paso); }

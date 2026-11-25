@@ -113,7 +113,8 @@ export class CitaComponent implements OnInit {
   /**
    * Fecha mínima permitida para agendar (hoy).
    */
-  fechaMinima: string = new Date().toISOString().split('T')[0];
+  /** Hoy en hora local (no UTC): se puede agendar cualquier hora del día de hoy en adelante. */
+  fechaMinima: string = new Date().toLocaleDateString('en-CA');
 
   constructor(
     private readonly citaService: CitaService,
@@ -265,7 +266,7 @@ export class CitaComponent implements OnInit {
     let horaStr = '';
     if (cita.fechaHora) {
       const d = new Date(cita.fechaHora);
-      fechaStr = d.toISOString().split('T')[0];
+      fechaStr = d.toLocaleDateString('en-CA'); // fecha local (toISOString daría la de UTC)
       const hours = String(d.getHours()).padStart(2, '0');
       const minutes = String(d.getMinutes()).padStart(2, '0');
       horaStr = `${hours}:${minutes}`;

@@ -56,7 +56,7 @@ export class AtencionMedicaComponent {
   private cargarPendientes() {
     const desde = new Date(); desde.setDate(desde.getDate() - 7);
     const hasta = new Date(); hasta.setDate(hasta.getDate() + 30);
-    const f = (d: Date) => d.toISOString().substring(0, 10) + 'T00:00:00';
+    const f = (d: Date) => d.toLocaleDateString('en-CA') + 'T00:00:00';
     this.calendario.calendario(f(desde), f(hasta), this.authService.obtenerUsuario()?.medicoId).subscribe({
       next: (c) => this.pendientes = c.filter((x) => ['PENDIENTE', 'CONFIRMADA', 'ATENDIDA'].includes(x.estado)),
       error: () => this.pendientes = []

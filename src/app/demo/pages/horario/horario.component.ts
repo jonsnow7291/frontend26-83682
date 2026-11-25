@@ -9,8 +9,8 @@ import { HorarioService } from './service/horario.service';
 import { MedicoService } from '../medico/service/medico.service';
 
 /**
- * Horarios de disponibilidad de los veterinarios. Las citas solo pueden programarse dentro de
- * estas franjas (regla de negocio de citas).
+ * Horarios de disponibilidad de los veterinarios. Son informativos: las citas ya no se restringen
+ * a estas franjas y pueden agendarse a cualquier hora.
  */
 @Component({
   selector: 'app-horario',

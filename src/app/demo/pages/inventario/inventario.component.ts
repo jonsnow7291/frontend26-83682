@@ -212,6 +212,6 @@ export class InventarioComponent {
   }
 
   private entradaVacia(): LoteRq {
-    return { medicamentoId: 0, numeroLote: '', cantidad: 0, precioCompra: null, fechaCompra: new Date().toISOString().substring(0, 10), fechaVencimiento: null };
+    return { medicamentoId: 0, numeroLote: '', cantidad: 0, precioCompra: null, fechaCompra: new Date().toLocaleDateString('en-CA'), fechaVencimiento: null };
   }
 }

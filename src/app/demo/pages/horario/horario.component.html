@@ -16,7 +16,7 @@
       <table class="table table-striped align-middle" *ngIf="medicoId">
         <thead class="table-light"><tr><th>Día</th><th>Desde</th><th>Hasta</th><th class="text-center">Activo</th><th class="text-center">Acciones</th></tr></thead>
         <tbody>
-          <tr *ngIf="!cargando && horarios.length === 0"><td colspan="5" class="text-center text-muted">Sin franjas: no se podrán programar citas para este veterinario</td></tr>
+          <tr *ngIf="!cargando && horarios.length === 0"><td colspan="5" class="text-center text-muted">Sin franjas registradas para este veterinario (las citas pueden agendarse a cualquier hora)</td></tr>
           <tr *ngFor="let h of horarios">
             <td>{{ dias[h.diaSemana || 0] }}</td><td>{{ h.horaInicio?.substring(0, 5) }}</td><td>{{ h.horaFin?.substring(0, 5) }}</td>
             <td class="text-center"><span class="badge" [ngClass]="h.activo ? 'bg-success' : 'bg-secondary'">{{ h.activo ? 'Sí' : 'No' }}</span></td>

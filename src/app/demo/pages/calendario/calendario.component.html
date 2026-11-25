@@ -93,11 +93,11 @@
         <div *ngIf="editable" class="border rounded p-3 mt-3">
           <h6>Reprogramar</h6>
           <div class="row g-2 align-items-end">
-            <div class="col-md-5"><label class="small text-muted">Nueva fecha y hora</label><input type="datetime-local" class="form-control" [(ngModel)]="nuevaFecha"></div>
+            <div class="col-md-5"><label class="small text-muted">Nueva fecha y hora</label><input type="datetime-local" class="form-control" [min]="minimoHoy" [(ngModel)]="nuevaFecha"></div>
             <div class="col-md-3"><label class="small text-muted">Duración (min)</label><input type="number" min="15" step="15" class="form-control" [(ngModel)]="duracion"></div>
             <div class="col-md-4"><button class="btn btn-outline-primary w-100" (click)="reprogramar()">Reprogramar</button></div>
           </div>
-          <small class="text-muted">Si hay solapamiento o el horario no está disponible, el sistema lo informará.</small>
+          <small class="text-muted">Si hay solapamiento con otra cita, el sistema lo informará. Se admite cualquier hora de hoy en adelante.</small>
         </div>
 
         <div class="mt-3" *ngIf="historial.length > 0">
@@ -138,7 +138,7 @@
             <option [ngValue]="null">Seleccione...</option>
             <option *ngFor="let m of mascotas" [ngValue]="m.mascotaId">{{ m.nombreMascota }}</option>
           </select></div>
-        <div class="col-md-8"><label class="form-label">Fecha y hora *</label><input type="datetime-local" class="form-control" [(ngModel)]="formCita.fechaHora"></div>
+        <div class="col-md-8"><label class="form-label">Fecha y hora *</label><input type="datetime-local" class="form-control" [min]="minimoHoy" [(ngModel)]="formCita.fechaHora"></div>
         <div class="col-md-4"><label class="form-label">Duración (min)</label><input type="number" min="15" step="15" class="form-control" [(ngModel)]="formCita.duracionMinutos"></div>
         <div class="col-12"><label class="form-label">Motivo *</label><textarea class="form-control" rows="2" [(ngModel)]="formCita.motivo"></textarea></div>
       </div></div>

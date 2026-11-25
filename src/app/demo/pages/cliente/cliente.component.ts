@@ -20,7 +20,7 @@ export class ClienteComponent {
   items: Cliente[] = [];
   form: Cliente = {};
   titleModal = '';
-  readonly hoy = new Date().toISOString().substring(0, 10);
+  readonly hoy = new Date().toLocaleDateString('en-CA');
   private modal: Modal | null = null;
 
   columnas: Columna[] = [

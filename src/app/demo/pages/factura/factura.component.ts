@@ -81,7 +81,7 @@ export class FacturaComponent {
     this.citaId = null; this.descuento = null; this.citasFacturables = [];
     const desde = new Date(); desde.setDate(desde.getDate() - 90);
     const hasta = new Date(); hasta.setDate(hasta.getDate() + 1);
-    const f = (d: Date) => d.toISOString().substring(0, 10) + 'T00:00:00';
+    const f = (d: Date) => d.toLocaleDateString('en-CA') + 'T00:00:00';
     this.citaService.listarPorFecha(f(desde), f(hasta)).subscribe({
       next: (c) => this.citasFacturables = c.filter((x) => ['ATENDIDA', 'FINALIZADA'].includes(x.estado ?? '')),
       error: () => this.citasFacturables = []
