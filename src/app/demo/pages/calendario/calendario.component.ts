@@ -52,6 +52,8 @@ export class CalendarioComponent {
   citas: CitaCalendario[] = [];
   resumen: Record<string, number> = {};
   cargando = false;
+  /** Días expandidos para ver todas las citas (key: yyyy-MM-dd). */
+  expandidos: Record<string, boolean> = {};
   readonly medicoId: number | null;
 
   // detalle / acciones
@@ -138,6 +140,26 @@ export class CalendarioComponent {
     const clave = dia(d);
     return this.citas.filter((c) => c.inicio?.startsWith(clave)).sort((a, b) => a.inicio.localeCompare(b.inicio));
   }
+
+  /** Citas a mostrar en la celda: máximo 3, salvo si el día está expandido. */
+  citasMostrar(d: Date): CitaCalendario[] {
+    const lista = this.citasDelDia(d);
+    if (this.expandidos[dia(d)]) { return lista; }
+    return lista.slice(0, 3);
+  }
+
+  /** Cantidad de citas ocultas en la celda (0 si está expandido). */
+  citasOcultas(d: Date): number {
+    const lista = this.citasDelDia(d);
+    if (this.expandidos[dia(d)]) { return 0; }
+    return Math.max(0, lista.length - 3);
+  }
+
+  /** Alterna el estado expandido/contraído de un día. */
+  alternarExpandido(d: Date) { this.expandidos[dia(d)] = !this.expandidos[dia(d)]; }
+
+  /** True si el día está expandido. */
+  expandido(d: Date): boolean { return !!this.expandidos[dia(d)]; }
 
   claseEstado(estado: string): string {
     return this.estados.find((e) => e.valor === estado)?.clase ?? 'bg-secondary';

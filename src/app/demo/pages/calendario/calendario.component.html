@@ -51,13 +51,16 @@
           <div class="border rounded h-100 p-2" [ngClass]="{ 'border-primary': esHoy(d) }">
             <div class="fw-bold text-center mb-2 text-capitalize">{{ d.toLocaleDateString('es-CO', { weekday: 'short', day: 'numeric' }) }}</div>
             <div *ngIf="citasDelDia(d).length === 0" class="text-muted small text-center">Sin citas</div>
-            <div *ngFor="let c of citasDelDia(d)" class="border rounded p-2 mb-2" style="cursor: pointer;" (click)="abrir(c)">
+            <div *ngFor="let c of citasMostrar(d)" class="border rounded p-2 mb-2" style="cursor: pointer;" (click)="abrir(c)">
               <span class="badge {{ claseEstado(c.estado) }}">{{ c.estado }}</span>
               <div class="fw-bold">{{ hora(c.inicio) }} – {{ hora(c.fin) }}</div>
               <div>{{ c.mascota }}</div>
               <div class="small text-muted">{{ c.propietario }}</div>
               <div class="small text-muted" *ngIf="c.motivo">{{ c.motivo }}</div>
             </div>
+            <button *ngIf="citasOcultas(d) > 0" class="btn btn-link btn-sm px-0 mt-2 d-inline-flex align-items-center" (click)="alternarExpandido(d)">
+              {{ expandido(d) ? 'Ver menos' : 'Ver más (' + citasOcultas(d) + ')' }}
+            </button>
           </div>
         </div>
       </div>
